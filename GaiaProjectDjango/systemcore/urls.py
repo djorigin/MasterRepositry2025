@@ -23,10 +23,5 @@ app_name = 'systemcore'
 # URL patterns for the systemcore app   
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='systemcore/index.html'), name='index'),
-    path('about/', TemplateView.as_view(template_name='systemcore/about.html'), name='about'),
-    path('contact/', TemplateView.as_view(template_name='systemcore/contact.html'), name='contact'),
-    path('help/', TemplateView.as_view(template_name='systemcore/help.html'), name='help'),
-    path('settings/', views.settings, name='settings'),
-    path('profile/', views.profile, name='profile'),
+    
 ]
