@@ -96,15 +96,8 @@ class SystemCoreColourCodeTests(TestCase):
         response = self.client.get(reverse('systemcore:colorcode_list'))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'systemcore/colorcode_list.html')
-        response = self.client.get(reverse('systemcore:colorcode_list'))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'systemcore/colorcode_list.html')
         url = reverse('systemcore:colorcode_list')
         self.assertEqual(url, '/systemcore/colorcode_list/')
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'systemcore/colorcode_list.html')
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'systemcore/colorcode_list.html')
     
     def test_colorcode_new_url_reverse(self):
         # Test that the URL name 'systemcore:colorcode_create' is correctly defined
