@@ -41,5 +41,5 @@ class SystemCoreColourCode(models.Model):
         self.full_clean()  # Ensure all validations are run before saving
         # Capitalize the name before saving
         if self.name:
-            self.name = self.name.capitalize()
+            self.name = self.name.title()
         super().save(*args, **kwargs)

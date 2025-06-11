@@ -1,8 +1,11 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.urls import reverse_lazy
 from .models import  SystemCoreColourCode
 
+
+class HomeView(TemplateView):
+    template_name = 'systemcore/index.html'
 
 class ColorCodeListView(ListView):
     model = SystemCoreColourCode  # Replace with your model name

@@ -16,12 +16,14 @@ Including another URLconf
 """
 from django.urls import path
 from . import views
+from .views import HomeView, ColorCodeListView, ColorCodeCreateView
 
 app_name = 'systemcore'
 
 # URL patterns for the systemcore app   
 
 urlpatterns = [
+    path('', views.HomeView.as_view(), name='home'),
     path('colorcode_list/', views.ColorCodeListView.as_view(), name='colorcode_list'),
     path('colorcode_create/', views.ColorCodeCreateView.as_view(), name='colorcode_create'),
 ]

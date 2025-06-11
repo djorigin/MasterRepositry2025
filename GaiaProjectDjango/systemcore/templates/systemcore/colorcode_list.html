@@ -1,24 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>System Core Colour Codes</title>
-</head>
-<body>
-    <h1>System Core Colour Codes</h1>
-    <table border="1">
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+  <!-- Content here -->
+  <h1>System Core Colour Codes</h1>
+</div>
+<div class="container">
+  <!-- Content here --> 
+  <a href="{% url 'systemcore:home' %}">Back to home</a>
+</div>
+<div class="container">
+  <!-- Content here -->
+ 
+   
+    <table class="table">
         <thead>
             <tr>
                 <th>Name</th>
-                <th>Code</th>
-                <!-- Add more columns as needed -->
+                <th> Hex Code</th>
+                <th> RGB Value</th>
+                <th>Preview</th>
+               
+                
             </tr>
         </thead>
-        <tbody>
+                
             {% for obj in objects %}
             <tr>
                 <td>{{ obj.name }}</td>
-                <td>{{ obj.code }}</td>
-                <!-- Add more fields as needed -->
+                <td>{{ obj.hex_code }}</td>
+                <td>{{ obj.rgb_value }}</td>
+                <td><div class="color-preview" style="background-color: {{ obj.hex_code }}; width: 50px; height: 20px;"></div></td>
+                    
+                
+                
             </tr>
             {% empty %}
             <tr>
@@ -41,5 +58,5 @@
         {% endif %}
     </div>
     {% endif %}
-</body>
-</html>
+</div>
+{% endblock content%}
