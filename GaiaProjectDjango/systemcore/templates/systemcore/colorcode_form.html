@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New System Core Colour Code</title>
+</head>
+<body>
+    <h1>Add New Colour Code</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+    <a href="{% url 'systemcore:colorcode_list' %}">Back to list</a>
+</body>
+</html>

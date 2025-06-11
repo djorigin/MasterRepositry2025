@@ -26,6 +26,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 pyvenv.cfg/
+tests/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -51,6 +52,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+tests/
 
 # Translations
 *.mo
@@ -196,3 +198,4 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+GaiaProjectDjango/systemcore/tests.py

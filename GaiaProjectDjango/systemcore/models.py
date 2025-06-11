@@ -38,6 +38,8 @@ class SystemCoreColourCode(models.Model):
         verbose_name_plural = "System Core Color Codes"
 
     def save(self, *args, **kwargs):
+        self.full_clean()  # Ensure all validations are run before saving
+        # Capitalize the name before saving
         if self.name:
             self.name = self.name.capitalize()
         super().save(*args, **kwargs)
