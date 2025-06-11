@@ -10,9 +10,10 @@ from django.core.validators import RegexValidator
 
 class SystemCoreColourCode(models.Model):
     name = models.CharField(max_length=100, unique=True)   
+    # This regex ensures the RGB value is in the format 'R,G,B' with each value between 0 and 255.
     rgb_validator = RegexValidator(
-        regex=r'^(?:[0-9]{1,3},){2}[0-9]{1,3}$',
-        message="RGB value must be in the format 'R,G,B' where R, G, and B are integers between 0 and 255."
+        regex=r'^(?:([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]),){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$',
+        message="RGB value must be in the format 'R,G,B' where R, G, and B are integers between 0 and 255 inclusive."
     )
     rgb_value = models.CharField(
         max_length=20,
