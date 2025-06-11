@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'systemcore',  # Custom app for system core functionalities
+    'widget_tweaks',  # Custom app for widget tweaks
 ]
 
 MIDDLEWARE = [

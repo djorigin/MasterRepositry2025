@@ -9,7 +9,7 @@ class HomeView(TemplateView):
 
 class ColorCodeListView(ListView):
     model = SystemCoreColourCode  # Replace with your model name
-    paginate_by = 10  # Optional: number of items per page
+    paginate_by = 15 # Optional: number of items per page
     ordering = ['name']  # Optional: default ordering of the list
     # Optional: customize the template and context variable 
     template_name = 'systemcore/colorcode_list.html'  # Replace with your template name

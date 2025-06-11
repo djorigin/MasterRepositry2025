@@ -1,15 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>New System Core Colour Code</title>
-</head>
-<body>
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container">
     <h1>Add New Colour Code</h1>
-    <form method="post">
+</div>
+<div class="container">
+     <form method="post" >
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Save</button>
+        {% for field in form %}
+        <div class="mb-3">
+            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+            {{ field|add_class:"form-control" }}
+            {% if field.errors %}
+                <div class="text-danger">
+                    {{ field.errors }}
+                </div>
+            {% endif %}
+                </div>
+    {% endfor %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-danger " onclick="window.location.href='{% url 'systemcore:colorcode_list' %}'">Exit</button>
     </form>
-    <a href="{% url 'systemcore:colorcode_list' %}">Back to list</a>
-</body>
-</html>
+</div>
+
+   
+    
+{% endblock content %}
