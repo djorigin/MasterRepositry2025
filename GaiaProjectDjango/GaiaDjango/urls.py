@@ -20,7 +20,7 @@ from django.urls import include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('systemcore/', include('systemcore.urls')),  # Include URLs from the systemcore app
+    path('', include('systemcore.urls')),  # Include URLs from the systemcore app
 ]
 # The above line includes the URL patterns defined in the systemcore app's urls.py file.
 # This allows the main project to route requests to the appropriate views in the systemcore app.
