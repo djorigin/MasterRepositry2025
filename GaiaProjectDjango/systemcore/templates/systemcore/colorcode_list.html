@@ -1,0 +1,63 @@
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+  <!-- Content here -->
+  <h1>System Core Colour Codes</h1>
+</div>
+<div class="container">
+  <!-- Content here --> 
+<button type="button" class="btn btn-primary btn-sm" onclick="window.location.href='{% url 'systemcore:home' %}'">Back to Home</button>
+<button type="button" class="btn btn-primary btn-sm" onclick="window.location.href='{% url 'systemcore:colorcode_create' %}'">Add New Colour Code</button>
+</div>
+<div class="container">
+  <!-- Content here -->
+ 
+   
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th> Hex Code</th>
+                <th> RGB Value</th>
+                <th>Preview</th>
+               
+                
+            </tr>
+        </thead>
+        <tbody>        
+            {% for obj in objects %}
+            <tr>
+                <td>{{ obj.name }}</td>
+                <td>{{ obj.hex_code }}</td>
+                <td>{{ obj.rgb_value }}</td>
+                <td><div class="color-preview" style="background-color: {{ obj.hex_code }}; width: 50px; height: 20px;"></div></td>
+                    
+                
+                
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="2">No color codes found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if is_paginated %}
+    <div>
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock content%}

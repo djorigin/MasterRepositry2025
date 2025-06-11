@@ -1,0 +1,24 @@
+{% extends "systemcore/systemcore_base.html"%}
+{% load static %}
+{% block content %}
+<nav class="navbar bg-dark border-bottom border-body" data-bs-theme="dark">
+  <div class="container-fluid">
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <a class="navbar-brand" href="#">System Core</a>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-link active" aria-current="page" href="{% url 'systemcore:colorcode_list' %}">Color Table</a>
+        <a class="nav-link" href="#">Features</a>
+        <a class="nav-link" href="#">Pricing</a>
+        <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+      </div>
+    </div>
+    <a class="navbar-brand" href="#">
+    <img src="{% static 'systemcore/images/logo.png' %}" alt="Logo" width="45" height="35" class="d-inline-block align-text-top">
+    </a>
+  </div>
+</nav>
+{% endblock content%}
