@@ -16,7 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.urls import include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('systemcore/', include('systemcore.urls')),  # Include URLs from the systemcore app
+    path('', include('systemcore.urls')),  # Redirect root URL to systemcore app
+    # path('api/', include('api.urls')),  # Uncomment if you have an API app
+    # path('auth/', include('auth.urls')),  # Uncomment if you have an authentication app
+    # path('games/', include('games.urls')),  # Uncomment if you have a games app
+    # path('users/', include('users.urls')),  # Uncomment if you have a users app
+    # path('settings/', include('settings.urls')),  # Uncomment if you have a settings app
 ]
