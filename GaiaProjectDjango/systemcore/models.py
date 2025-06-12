@@ -18,7 +18,9 @@ class SystemCoreColourCode(models.Model):
     rgb_value = models.CharField(
         max_length=20,
         unique=True,
-        validators=[rgb_validator]
+        validators=[rgb_validator],
+        verbose_name="RGB Value",
+        help_text="Enter a valid RGB value in the format 'R,G,B' (e.g., '255,255,255')."
     )  # e.g., '255,255,255' for white
 
     hex_validator = RegexValidator(
@@ -27,7 +29,10 @@ class SystemCoreColourCode(models.Model):
     )
     hex_code = models.CharField(
         max_length=7,
-        validators=[hex_validator]
+        validators=[hex_validator],
+        unique=True,
+        verbose_name="Hex Code",
+        help_text="Enter a valid hex color code (e.g., '#FFFFFF')."
     )  # e.g., '#FFFFFF' for white
 
     def __str__(self):
