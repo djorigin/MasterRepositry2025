@@ -1,8 +1,10 @@
 # GaiaProjectDjango
 # systemcore/models.py
 # Django imports
-from django.db import models  
+from django.db import models, transaction, IntegrityError
 from django.core.validators import RegexValidator
+import random
+import string
 # from django.utils.translation import gettext_lazy as _  # For internationalization (optional)
 # Create your models here.
 
@@ -72,3 +74,49 @@ class RJ45Pinout(models.Model):
 
     def __str__(self):
         return f"{self.name} - Pin {self.pin_number}: {self.color_code}"
+
+def generate_supplier_code():
+    prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
+    mid = ''.join(random.choices(string.digits, k=4))
+    end = ''.join(random.choices(string.digits, k=5))
+    return f"{prefix}-{mid}-{end}"
+
+class Supplier(models.Model):
+    supplier_code = models.CharField(max_length=50, primary_key=True, editable=False)
+    name = models.CharField(max_length=255, unique=True)
+    legal_name = models.CharField(max_length=255, blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    tax_id = models.CharField(max_length=100, blank=True, null=True)
+    is_manufacturer = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Supplier / Manufacturer"
+        verbose_name_plural = "Suppliers / Manufacturers"
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.supplier_code:
+            for _ in range(10):  # Try up to 10 times to avoid rare collisions
+                code = generate_supplier_code()
+                try:
+                    with transaction.atomic():
+                        if not Supplier.objects.filter(supplier_code=code).exists():
+                            self.supplier_code = code
+                            break
+                except IntegrityError:
+                    continue
+            else:
+                raise ValueError("Could not generate a unique supplier code after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
