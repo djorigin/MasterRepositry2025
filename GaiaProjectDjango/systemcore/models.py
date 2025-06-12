@@ -344,6 +344,39 @@ class SystemBuilder(models.Model):
     def __str__(self):
         return f"System Build {self.systemBuildNumber} for {self.client.name}"
 
+    def generate_purchase_order(self, user=None):
+        if not self.is_complete:
+            raise ValueError("System build must be marked as complete before generating a purchase order.")
+        if hasattr(self, 'systempurchaseorder'):
+            raise ValueError("Purchase order already exists for this build.")
+
+        po = SystemPurchaseOrder.objects.create(
+            system_builder=self,
+            created_by=user
+        )
+        for conn in self.connections.all():
+            # Add cable
+            SystemPurchaseOrderItem.objects.create(
+                purchase_order=po,
+                product=conn.cable.product,
+                supplier=conn.cable.product.supplier,
+                amount=1,
+                unit_price=conn.cable.product.price,
+                cable_length=getattr(conn, 'cable_length', None),  # If you add this field
+                description=f"Cable for {conn.label}"
+            )
+            # Add terminals
+            for terminal in [conn.terminal_a, conn.terminal_b]:
+                SystemPurchaseOrderItem.objects.create(
+                    purchase_order=po,
+                    product=terminal.product,
+                    supplier=terminal.product.supplier,
+                    amount=1,
+                    unit_price=terminal.product.price,
+                    description=f"Terminal for {conn.label}"
+                )
+        return po
+
 class SystemBuilderConnection(models.Model):
     system_builder = models.ForeignKey(SystemBuilder, on_delete=models.CASCADE, related_name='connections', verbose_name="System Build")
     code_sequence = models.CharField(max_length=7, verbose_name="Connection Code Sequence")  # e.g., 123-456
