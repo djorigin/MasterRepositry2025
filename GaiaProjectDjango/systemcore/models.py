@@ -474,3 +474,88 @@ class SystemPurchaseOrderItem(models.Model):
     def __str__(self):
         return f"{self.product.name} x{self.amount} ({self.purchase_order})"
 
+def generate_invoice_number():
+    prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
+    mid = ''.join(random.choices(string.digits, k=4))
+    end = ''.join(random.choices(string.digits, k=5))
+    return f"{prefix}-{mid}-{end}"
+
+class SystemClientInvoice(models.Model):
+    invoice_number = models.CharField(max_length=50, primary_key=True, editable=False, verbose_name="Invoice Number")
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Client")
+    system_builder = models.OneToOneField(SystemBuilder, on_delete=models.CASCADE, verbose_name="System Build")
+    date_created = models.DateTimeField(default=timezone.now, verbose_name="Date Created")
+    is_sent = models.BooleanField(default=False, verbose_name="Is Sent")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Created By")
+
+    class Meta:
+        verbose_name = "System Client Invoice"
+        verbose_name_plural = "System Client Invoices"
+        ordering = ['-date_created']
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            for _ in range(10):
+                code = generate_invoice_number()
+                if not SystemClientInvoice.objects.filter(invoice_number=code).exists():
+                    self.invoice_number = code
+                    break
+            else:
+                raise ValueError("Could not generate a unique invoice number after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def total_price(self):
+        return sum(item.total_price() for item in self.items.all())
+
+    def __str__(self):
+        return f"Invoice {self.invoice_number} for {self.client.name}"
+    
+    def generate_client_invoice(self, user=None):
+        if not self.is_ordered:
+            raise ValueError("Purchase order must be marked as ordered before generating an invoice.")
+        if hasattr(self, 'systemclientinvoice'):
+            raise ValueError("Invoice already exists for this purchase order.")
+
+        invoice = SystemClientInvoice.objects.create(
+            client=self.system_builder.client,
+            system_builder=self.system_builder,
+            created_by=user
+        )
+        for item in self.items.all():
+            SystemClientInvoiceItem.objects.create(
+                invoice=invoice,
+                product=item.product,
+                amount=item.amount,
+                unit_price=item.unit_price,
+                description=item.description,
+                cable_length=item.cable_length
+            )
+        return invoice
+
+class SystemClientInvoiceItem(models.Model):
+    invoice = models.ForeignKey(SystemClientInvoice, on_delete=models.CASCADE, related_name='items', verbose_name="Invoice")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Product")
+    amount = models.PositiveIntegerField(default=1, verbose_name="Amount")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Unit Price")
+    total = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Total Price")
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name="Description")
+    cable_length = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True, verbose_name="Cable Length (m)")
+
+    class Meta:
+        verbose_name = "System Client Invoice Item"
+        verbose_name_plural = "System Client Invoice Items"
+
+    def save(self, *args, **kwargs):
+        if self.cable_length and self.product.unit == 'meter':
+            self.total = self.unit_price * self.cable_length * self.amount
+        else:
+            self.total = self.unit_price * self.amount
+        super().save(*args, **kwargs)
+
+    def total_price(self):
+        return self.total
+
+    def __str__(self):
+        return f"{self.product.name} x{self.amount} ({self.invoice})"
+
