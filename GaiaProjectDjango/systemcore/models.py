@@ -277,3 +277,29 @@ class CatRJ45(models.Model):
     def __str__(self):
         return f"{self.name} ({self.get_type_display()})"
 
+class Terminal(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Terminal Name")
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, verbose_name="Product Code")
+
+    class Meta:
+        verbose_name = "Terminal"
+        verbose_name_plural = "Terminals"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class TerminalInput(models.Model):
+    terminal = models.ForeignKey(Terminal, on_delete=models.CASCADE, related_name='inputs', verbose_name="Terminal")
+    input_number = models.PositiveSmallIntegerField(verbose_name="Input Number")  # 1 to 48
+    catrj45 = models.ForeignKey(CatRJ45, on_delete=models.CASCADE, verbose_name="RJ45 Connector")
+
+    class Meta:
+        verbose_name = "Terminal Input"
+        verbose_name_plural = "Terminal Inputs"
+        ordering = ['terminal', 'input_number']
+        unique_together = ('terminal', 'input_number')  # Prevent duplicate input numbers per terminal
+
+    def __str__(self):
+        return f"{self.terminal.name} - Input {self.input_number}: {self.catrj45.name}"
+
