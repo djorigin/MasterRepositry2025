@@ -1,0 +1,20 @@
+{% extends "systemcore/systemcore_base.html"%}
+{% load static %}
+
+{% block content %}
+<div class="container">
+  <h2>RJ45 Pinouts</h2>
+</div>
+<div class="container">
+  <ul>
+    {% for pinout in pinouts %}
+      <li>{{ pinout.name }} - Pin {{ pinout.pin_number }}: {{ pinout.color_code }}</li>
+    {% empty %}
+      <li>No pinouts found.</li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="container">
+  <a href="{% url 'systemcore:rj45pinout_bulk_create' %}" class="btn btn-primary">Create New Pinout</a>
+</div>
+{% endblock %}

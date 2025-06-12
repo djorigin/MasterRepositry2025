@@ -1,7 +1,9 @@
+from django.views.generic.edit import FormView
+from django.forms import modelformset_factory
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.urls import reverse_lazy, reverse
-from .models import  SystemCoreColourCode
+from .models import  SystemCoreColourCode, RJ45Pinout
 from django.db.models import Q
 
 
@@ -89,6 +91,49 @@ class ColorCodeDeleteView(DeleteView):
     template_name = 'systemcore/colorcode_confirm_delete.html'  # Replace with your template name
     success_url = reverse_lazy('systemcore:colorcode_list')  # Redirect after successful deletion
     context_object_name = 'object'  # Optional: customize context variable
+
+class RJ45PinoutBulkCreateView(FormView):
+    template_name = 'systemcore/rj45pinout/rj45pinout_formset.html'
+    success_url = reverse_lazy('systemcore:rj45pinout_list')
+
+    def get_form_class(self):
+        return modelformset_factory(
+            RJ45Pinout,
+            fields=('pin_number', 'color_code'),  # Remove 'name' from formset fields
+            extra=8,
+            max_num=8
+        )
+
+    def get_form(self, form_class=None):
+        form_class = self.get_form_class()
+        if self.request.method == 'POST':
+            return form_class(self.request.POST)
+        return form_class(queryset=RJ45Pinout.objects.none())
+
+    def post(self, request, *args, **kwargs):
+        formset = self.get_form()
+        name = request.POST.get('name')
+        if formset.is_valid():
+            instances = formset.save(commit=False)
+            for instance in instances:
+                instance.name = name
+                instance.save()
+            return redirect(self.success_url)
+        # If not valid, re-render the page with errors
+        return self.render_to_response(self.get_context_data(formset=formset))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['formset'] = kwargs.get('formset', self.get_form())
+        return context
+    
+class RJ45PinoutListView(ListView):
+    model = RJ45Pinout
+    template_name = 'systemcore/rj45pinout/rj45pinout_list.html'
+    context_object_name = 'pinouts'
+    ordering = ['name', 'pin_number']  # Optional: specify ordering of the list
+    paginate_by = 20  # Optional: add pagination
+
 def index(request):
     """
     View function for the home page of the site.

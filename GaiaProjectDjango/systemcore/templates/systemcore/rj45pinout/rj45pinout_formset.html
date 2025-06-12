@@ -1,0 +1,28 @@
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+
+{% block title %}Create RJ45 Pinouts{% endblock %}
+
+ 
+{% block content %}
+  <h2>Create 8 RJ45 Pinouts</h2>
+  <form method="post">
+    {% csrf_token %}
+    <label for="id_name">Pinout Name:</label>
+    <input type="text" name="name" id="id_name" required>
+    {{ formset.management_form }}
+    <table>
+      <tr>
+        <th>Pin Number</th>
+        <th>Color Code</th>
+      </tr>
+      {% for form in formset %}
+        <tr>
+          <td>{{ form.pin_number }}</td>
+          <td>{{ form.color_code }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <button type="submit">Save All</button>
+  </form>
+{% endblock %}

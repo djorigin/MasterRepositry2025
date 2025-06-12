@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.urls import path
 from . import views
-from .views import HomeView, ColorCodeListView, ColorCodeCreateView, ColorCodeDetailView
+from .views import HomeView, ColorCodeListView, ColorCodeCreateView, ColorCodeDetailView, RJ45PinoutBulkCreateView, RJ45PinoutListView
 
 app_name = 'systemcore'
 
@@ -27,4 +27,7 @@ urlpatterns = [
     path('colorcode_create/', views.ColorCodeCreateView.as_view(), name='colorcode_create'),
     path('colorcodes/', ColorCodeListView.as_view(), name='colorcode_list'),
     path('colorcodes/<int:pk>/', ColorCodeDetailView.as_view(), name='colorcode_detail'),
+    
+    path('rj45pinout/bulk-create/', RJ45PinoutBulkCreateView.as_view(), name='rj45pinout_bulk_create'),
+    path('rj45pinout/', RJ45PinoutListView.as_view(), name='rj45pinout_list'),
 ]
