@@ -444,6 +444,27 @@ class SystemPurchaseOrder(models.Model):
 
     def __str__(self):
         return f"PO {self.purchase_order_number} for {self.system_builder}"
+    def generate_client_invoice(self, user=None):
+        if not self.is_ordered:
+            raise ValueError("Purchase order must be marked as ordered before generating an invoice.")
+        if SystemClientInvoice.objects.filter(system_builder=self.system_builder).exists():
+            raise ValueError("Invoice already exists for this purchase order.")
+
+        invoice = SystemClientInvoice.objects.create(
+            client=self.system_builder.client,
+            system_builder=self.system_builder,
+            created_by=user
+        )
+        for item in self.items.all():
+            SystemClientInvoiceItem.objects.create(
+                invoice=invoice,
+                product=item.product,
+                amount=item.amount,
+                unit_price=item.unit_price,
+                description=item.description,
+                cable_length=item.cable_length
+            )
+        return invoice
 
 class SystemPurchaseOrderItem(models.Model):
     purchase_order = models.ForeignKey(SystemPurchaseOrder, on_delete=models.CASCADE, related_name='items', verbose_name="Purchase Order")
@@ -514,8 +535,8 @@ class SystemClientInvoice(models.Model):
     def generate_client_invoice(self, user=None):
         if not self.is_ordered:
             raise ValueError("Purchase order must be marked as ordered before generating an invoice.")
-        if hasattr(self, 'systemclientinvoice'):
-            raise ValueError("Invoice already exists for this purchase order.")
+        if SystemClientInvoice.objects.filter(system_builder=self.system_builder).exists():
+           raise ValueError("Invoice already exists for this purchase order.")
 
         invoice = SystemClientInvoice.objects.create(
             client=self.system_builder.client,

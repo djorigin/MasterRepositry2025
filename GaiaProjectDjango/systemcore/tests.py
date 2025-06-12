@@ -97,9 +97,108 @@ class SystemBuilderConnectionTest(TestCase):
         self.assertEqual(connection.label, "Port 1")
         self.assertIn("Port 1", str(connection))
 
-# Add more tests for:
-# - Purchase order and invoice generation
-# - Account transaction creation via signals
+class PurchaseOrderGenerationTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Test Client")
+        self.user = User.objects.create(username="designer")
+        self.supplier = Supplier.objects.create(name="Test Supplier")
+        self.product = Product.objects.create(name="Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Test Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product_a = Product.objects.create(name="Terminal Product A", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_product_b = Product.objects.create(name="Terminal Product B", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Terminal A", product=self.terminal_product_a)
+        self.terminal_b = Terminal.objects.create(name="Terminal B", product=self.terminal_product_b)
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user, is_complete=True)
+        self.connection = SystemBuilderConnection.objects.create(
+            system_builder=self.builder,
+            terminal_a=self.terminal_a,
+            terminal_b=self.terminal_b,
+            cable=self.cable,
+            label="Port 1"
+        )
+
+    def test_generate_purchase_order(self):
+        po = self.builder.generate_purchase_order(user=self.user)
+        self.assertIsNotNone(po)
+        self.assertEqual(po.system_builder, self.builder)
+        self.assertEqual(po.items.count(), 3)  # 1 cable + 2 terminals
+        self.assertAlmostEqual(po.total_price(), Decimal("9.00"))
+
+class InvoiceGenerationTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Test Client")
+        self.user = User.objects.create(username="designer")
+        self.supplier = Supplier.objects.create(name="Test Supplier")
+        self.product = Product.objects.create(name="Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Test Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product_a = Product.objects.create(name="Terminal Product A", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_product_b = Product.objects.create(name="Terminal Product B", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Terminal A", product=self.terminal_product_a)
+        self.terminal_b = Terminal.objects.create(name="Terminal B", product=self.terminal_product_b)
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user, is_complete=True)
+        self.connection = SystemBuilderConnection.objects.create(
+        system_builder=self.builder,
+        terminal_a=self.terminal_a,
+        terminal_b=self.terminal_b,
+        cable=self.cable,
+        label="Port 1"
+    )
+        self.po = self.builder.generate_purchase_order(user=self.user)
+    # If using signals, do NOT call generate_client_invoice manually:
+        self.po.is_ordered = True
+        self.po.save()
+        invoice = SystemClientInvoice.objects.get(system_builder=self.builder)
+        self.assertIsNotNone(invoice)
+
+def test_generate_invoice(self):
+        invoice = self.po.generate_client_invoice(user=self.user)
+        self.assertIsNotNone(invoice)
+        self.assertEqual(invoice.system_builder, self.builder)
+        self.assertEqual(invoice.client, self.client)
+        self.assertEqual(invoice.items.count(), 3)  # 1 cable + 2 terminals
+        self.assertAlmostEqual(invoice.total_price(), Decimal("9.00"))
+
+class SignalIntegrationTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Signal Client")
+        self.user = User.objects.create(username="signaluser")
+        self.supplier = Supplier.objects.create(name="Signal Supplier")
+        self.product = Product.objects.create(name="Signal Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Signal Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product_a = Product.objects.create(name="Signal Terminal Product A", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_product_b = Product.objects.create(name="Signal Terminal Product B", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Signal Terminal A", product=self.terminal_product_a)
+        self.terminal_b = Terminal.objects.create(name="Signal Terminal B", product=self.terminal_product_b)
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user, is_complete=False)
+        self.connection = SystemBuilderConnection.objects.create(
+            system_builder=self.builder,
+            terminal_a=self.terminal_a,
+            terminal_b=self.terminal_b,
+            cable=self.cable,
+            label="Signal Port"
+        )
+
+    def test_purchase_order_created_by_signal(self):
+        # Mark as complete and save to trigger signal
+        self.builder.is_complete = True
+        self.builder.save()
+        from systemcore.models import SystemPurchaseOrder
+        po = SystemPurchaseOrder.objects.get(system_builder=self.builder)
+        self.assertIsNotNone(po)
+        self.assertEqual(po.system_builder, self.builder)
+
+    def test_invoice_created_by_signal(self):
+        # Mark as complete and save to trigger PO creation
+        self.builder.is_complete = True
+        self.builder.save()
+        from systemcore.models import SystemPurchaseOrder, SystemClientInvoice
+        po = SystemPurchaseOrder.objects.get(system_builder=self.builder)
+        # Mark PO as ordered and save to trigger invoice creation
+        po.is_ordered = True
+        po.save()
+        invoice = SystemClientInvoice.objects.get(system_builder=self.builder)
+        self.assertIsNotNone(invoice)
+        self.assertEqual(invoice.system_builder, self.builder)
 
 
 
