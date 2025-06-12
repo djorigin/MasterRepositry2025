@@ -559,3 +559,77 @@ class SystemClientInvoiceItem(models.Model):
     def __str__(self):
         return f"{self.product.name} x{self.amount} ({self.invoice})"
 
+class SystemAccount(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Account Name")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "System Account"
+        verbose_name_plural = "System Accounts"
+
+    def __str__(self):
+        return self.name
+
+    def balance(self):
+        # Sum of all credits minus all debits
+        credits = self.transactions.filter(type__in=['INVOICE_PAYMENT', 'CREDIT']).aggregate(total=models.Sum('amount'))['total'] or 0
+        debits = self.transactions.filter(type__in=['PURCHASE_ORDER_PAYMENT', 'BILL']).aggregate(total=models.Sum('amount'))['total'] or 0
+        return credits - debits
+
+TRANSACTION_TYPE_CHOICES = [
+    ('INVOICE_PAYMENT', 'Invoice Payment (Money In)'),
+    ('PURCHASE_ORDER_PAYMENT', 'Purchase Order Payment (Money Out)'),
+    ('BILL', 'Bill (Money Out)'),
+    ('CREDIT', 'Credit (Money In)'),
+    # Add more as needed
+]
+
+class SystemAccountTransaction(models.Model):
+    account = models.ForeignKey(SystemAccount, on_delete=models.CASCADE, related_name='transactions', verbose_name="Account")
+    type = models.CharField(max_length=32, choices=TRANSACTION_TYPE_CHOICES, verbose_name="Transaction Type")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Amount")
+    date = models.DateTimeField(default=timezone.now, verbose_name="Date")
+    related_invoice = models.ForeignKey(SystemClientInvoice, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Related Invoice")
+    related_purchase_order = models.ForeignKey(SystemPurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Related Purchase Order")
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name="Description")
+
+    class Meta:
+        verbose_name = "System Account Transaction"
+        verbose_name_plural = "System Account Transactions"
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.get_type_display()} - {self.amount} on {self.date.date()}"
+
+# Optionally, you can add models for Bills and Credits if you want to store more details:
+class SystemBill(models.Model):
+    account = models.ForeignKey(SystemAccount, on_delete=models.CASCADE, related_name='bills', verbose_name="Account")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Amount")
+    date = models.DateTimeField(default=timezone.now, verbose_name="Date")
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name="Description")
+    is_paid = models.BooleanField(default=False, verbose_name="Is Paid")
+
+    class Meta:
+        verbose_name = "System Bill"
+        verbose_name_plural = "System Bills"
+
+    def __str__(self):
+        return f"Bill {self.amount} on {self.date.date()}"
+
+class SystemCredit(models.Model):
+    account = models.ForeignKey(SystemAccount, on_delete=models.CASCADE, related_name='credits', verbose_name="Account")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Amount")
+    date = models.DateTimeField(default=timezone.now, verbose_name="Date")
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name="Description")
+    is_used = models.BooleanField(default=False, verbose_name="Is Used")
+
+    class Meta:
+        verbose_name = "System Credit"
+        verbose_name_plural = "System Credits"
+
+    def __str__(self):
+        return f"Credit {self.amount} on {self.date.date()}"
+
+
+
