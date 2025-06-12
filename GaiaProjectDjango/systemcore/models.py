@@ -10,7 +10,7 @@ import string
 
 class Country(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Country Name")  # e.g., 'United States', 'Canada'
-    iso_code = models.CharField(max_length=3, unique=True, verbose_name="ISO-CODE")  # e.g., 'USA', 'GBR'
+    iso_code = models.CharField(max_length=5, unique=True, verbose_name="ISO-CODE")  # e.g., 'USA', 'GBR'
 
     class Meta:
         verbose_name = "Country"
