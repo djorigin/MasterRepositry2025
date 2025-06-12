@@ -1,0 +1,191 @@
+ {% extends 'systemcore/systemcore_base.html' %} 
+    {% load static %}
+    {% block title %}Color Code Detail{% endblock %}
+    {% block content %}
+    <div class="container">
+        <h1>Color Code Detail</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ object.name }}</h5>
+                <p class="card-text">Hex Code: <span style="color: {{ object.hex_code }}">{{ object.hex_code }}</span></p>
+                <p class="card-text">
+                    Preview:
+                    <div class="color-preview" style="display:inline-block; background-color: {{ object.hex_code }}; width: 50px; height: 20px; border: 1px solid #ccc; vertical-align: middle;"></div>
+                </p>
+                <p class="card-text">RGB Code: {{ object.rgb_value }}</p>
+                
+               {% comment %}  <a href="{% url 'color_code_edit' color_code.id %}" class="btn btn-primary">Edit</a>
+                <a href="{% url 'color_code_delete' color_code.id %}" class="btn btn-danger">Delete</a> {% endcomment %}
+                <a href="{% url 'systemcore:colorcode_list' %}" class="btn btn-secondary">Back to List</a>
+                
+            </div>
+        </div>
+        <div class="mt-4">
+            <h2>Related Color Codes</h2>
+            <ul class="list-group">
+    {% for related_color in related_colors %}
+        <li class="list-group-item">
+            <a href="{% url 'systemcore:colorcode_detail' related_color.id %}">{{ related_color.name }}</a>
+            <span class="badge bg-secondary">{{ related_color.hex_code }}</span>
+        </li>
+    {% empty %}
+        <li class="list-group-item">No related color codes found.</li>
+    {% endfor %}
+</ul>
+        </div>
+    </div>  
+    {% endblock %}
+    {% block extra_js %}
+    <script>
+        // Additional JavaScript can be added here if needed
+        console.log("Color Code Detail Page Loaded");
+    </script>   
+    {% endblock %}
+    {% block extra_css %}
+    <style>
+        .card {
+            margin-top: 20px;
+        }
+        .list-group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .list-group-item a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .list-group-item a:hover {
+            text-decoration: underline;
+        }
+        .badge {
+            font-size: 0.9em;
+            padding: 0.5em;
+        }
+        .btn {
+            margin-right: 10px;
+        }
+        .btn-secondary {
+            margin-top: 10px;
+        }
+        .btn-danger {
+            margin-left: 10px;
+        }
+        .btn-primary {
+            margin-left: 10px;
+        }
+        .btn-secondary:hover, .btn-primary:hover, .btn-danger:hover {
+            opacity: 0.8;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        h1, h2 {
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .card-text {
+            margin-bottom: 10px;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .badge.bg-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .badge.bg-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-secondary:hover {
+            background-color: #6c757d;
+        }
+        .mt-4 {
+            margin-top: 20px;
+        }
+        .mb-4 {
+            margin-bottom: 20px;
+        }
+        .list-group {
+            margin-top: 20px;
+        }
+        .list-group-item {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .list-group-item:hover {
+            background-color: #e9ecef;
+        }
+        .list-group-item.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .list-group-item.active:hover {
+            background-color: #0056b3;
+        }
+        .list-group-item.active a {
+            color: white;
+        }
+        .list-group-item.active span {
+            color: #f8f9fa;
+        }
+        .list-group-item span {
+            font-weight: bold;
+        }
+        .list-group-item a:hover {
+            color: #0056b3;
+        }
+        .list-group-item a:focus {
+            outline: none;
+            text-decoration: underline;
+        }
+        .list-group-item a:focus:hover {
+            text-decoration: none;
+        }
+        .list-group-item a:focus {
+            color: #0056b3;
+        }
+        .list-group-item a:focus span {
+            color: #f8f9fa;
+        }
+        .list-group-item a:focus:hover span {
+            color: #f8f9fa;
+        }
+        .list-group-item a:focus:hover {
+            color: #0056b3;
+        }
+        .list-group-item a:focus:hover {
+            text-decoration: none;
+        }
+        .list-group-item a:focus:hover {
+            color: #0056b3;
+        }
+        .list-group-item a:focus:hover span {
+            color: #f8f9fa;
+        }
+        .list-group-item a:focus:hover {
+            text-decoration: none;
+        }
+        .list-group-item a:focus:hover {
+            color: #0056b3;
+        }
+        .list-group-item a:focus:hover span {
+            color: #f8f9fa;
+        }
+        .list-group-item a:focus:hover {
+            text-decoration: none;
+        }
+        .list-group-item a:focus:hover {
+            color: #0056b3;
+        } 
+    {% endblock %}      

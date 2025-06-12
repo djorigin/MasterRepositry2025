@@ -1,24 +1,76 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from .models import  SystemCoreColourCode
+from django.db.models import Q
 
 
 class HomeView(TemplateView):
     template_name = 'systemcore/index.html'
 
 class ColorCodeListView(ListView):
-    model = SystemCoreColourCode  # Replace with your model name
-    paginate_by = 15 # Optional: number of items per page
-    ordering = ['name']  # Optional: default ordering of the list
-    # Optional: customize the template and context variable 
-    template_name = 'systemcore/colorcode_list.html'  # Replace with your template name
-    context_object_name = 'objects'        # Optional: customize context variable
+    model = SystemCoreColourCode
+    paginate_by = 15
+    ordering = ['name']
+    template_name = 'systemcore/colorcode_list.html'
+    context_object_name = 'objects'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        q = self.request.GET.get('q', '')
+        if q:
+            queryset = queryset.filter(
+                Q(name__icontains=q) |
+                Q(hex_code__icontains=q) |
+                Q(rgb_value__icontains=q)
+            )
+        return queryset.order_by(*self.ordering)
+
+    def get(self, request, *args, **kwargs):
+        q = request.GET.get('q', '')
+        if q:
+            matches = self.model.objects.filter(
+                Q(name__iexact=q) |
+                Q(hex_code__iexact=q) |
+                Q(rgb_value__iexact=q)
+            )
+            if matches.count() == 1:
+                return redirect('systemcore:colorcode_detail', pk=matches.first().pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        return context
 
 class ColorCodeDetailView(DetailView):
     model = SystemCoreColourCode  # Replace with your model name
     template_name = 'systemcore/colorcode_detail.html'  # Replace with your template name
     context_object_name = 'object'  # Optional: customize context variable
+    
+  
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        current_color = self.object
+
+        # Extract keyword from the name (e.g., "Blue" in "Sky Blue")
+        # You can use a list of keywords or just use the first word
+        keywords = ["Blue", "Black", "Red", "Green", "Yellow", "White", "Purple", "Orange", "Pink", "Brown", "Gray", "Grey"]
+        found_keyword = None
+        for word in keywords:
+            if word.lower() in current_color.name.lower():
+                found_keyword = word
+                break
+
+        if found_keyword:
+            related_colors = SystemCoreColourCode.objects.filter(
+                name__icontains=found_keyword
+            ).exclude(pk=current_color.pk)[:10]
+        else:
+            related_colors = SystemCoreColourCode.objects.none()
+
+        context['related_colors'] = related_colors
+        return context
 
 class ColorCodeCreateView(CreateView):
     model = SystemCoreColourCode  # Replace with your model name
