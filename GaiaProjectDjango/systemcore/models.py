@@ -3,6 +3,7 @@
 # Django imports
 from django.db import models, transaction, IntegrityError
 from django.core.validators import RegexValidator, MinValueValidator
+from django.contrib.auth.models import User
 import random
 import string
 from decimal import Decimal
@@ -174,4 +175,45 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.product_code})"
+
+def generate_client_id():
+    prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
+    mid = ''.join(random.choices(string.digits, k=4))
+    end = ''.join(random.choices(string.digits, k=5))
+    return f"{prefix}-{mid}-{end}"
+
+class Client(models.Model):
+    client_id = models.CharField(max_length=50, primary_key=True, editable=False, verbose_name="Client ID")
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, verbose_name="User Account")
+    name = models.CharField(max_length=255, unique=True, verbose_name="Client Name")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    phone = models.CharField(max_length=50, blank=True, null=True, verbose_name="Phone")
+    street_address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Street Address")
+    city = models.CharField(max_length=100, blank=True, null=True, verbose_name="City")
+    state = models.CharField(max_length=100, blank=True, null=True, verbose_name="State/Province")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Postal Code")
+    country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Country")
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Client / Customer"
+        verbose_name_plural = "Clients / Customers"
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.client_id:
+            for _ in range(10):
+                code = generate_client_id()
+                if not Client.objects.filter(client_id=code).exists():
+                    self.client_id = code
+                    break
+            else:
+                raise ValueError("Could not generate a unique client ID after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
 
