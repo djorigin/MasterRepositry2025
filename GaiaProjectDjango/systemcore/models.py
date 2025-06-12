@@ -376,3 +376,68 @@ class SystemBuilderConnection(models.Model):
     def __str__(self):
         return f"{self.label} ({self.code_sequence}) in {self.system_builder}"
 
+def generate_purchase_order_number():
+    prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
+    mid = ''.join(random.choices(string.digits, k=4))
+    end = ''.join(random.choices(string.digits, k=5))
+    return f"{prefix}-{mid}-{end}"
+
+class SystemPurchaseOrder(models.Model):
+    purchase_order_number = models.CharField(max_length=50, primary_key=True, editable=False, verbose_name="Purchase Order Number")
+    system_builder = models.OneToOneField(SystemBuilder, on_delete=models.CASCADE, verbose_name="System Build")
+    date_created = models.DateTimeField(default=timezone.now, verbose_name="Date Created")
+    is_ordered = models.BooleanField(default=False, verbose_name="Is Ordered")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Created By")
+
+    class Meta:
+        verbose_name = "System Purchase Order"
+        verbose_name_plural = "System Purchase Orders"
+        ordering = ['-date_created']
+
+    def save(self, *args, **kwargs):
+        if not self.purchase_order_number:
+            for _ in range(10):
+                code = generate_purchase_order_number()
+                if not SystemPurchaseOrder.objects.filter(purchase_order_number=code).exists():
+                    self.purchase_order_number = code
+                    break
+            else:
+                raise ValueError("Could not generate a unique purchase order number after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def total_price(self):
+        return sum(item.total_price() for item in self.items.all())
+
+    def __str__(self):
+        return f"PO {self.purchase_order_number} for {self.system_builder}"
+
+class SystemPurchaseOrderItem(models.Model):
+    purchase_order = models.ForeignKey(SystemPurchaseOrder, on_delete=models.CASCADE, related_name='items', verbose_name="Purchase Order")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Product")
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Supplier")
+    amount = models.PositiveIntegerField(default=1, verbose_name="Amount")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Unit Price")
+    total = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Total Price")
+    description = models.CharField(max_length=255, blank=True, null=True, verbose_name="Description")
+    # For cables, store length (meters)
+    cable_length = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True, verbose_name="Cable Length (m)")
+
+    class Meta:
+        verbose_name = "System Purchase Order Item"
+        verbose_name_plural = "System Purchase Order Items"
+
+    def save(self, *args, **kwargs):
+        # Calculate total price
+        if self.cable_length and self.product.unit == 'meter':
+            self.total = self.unit_price * self.cable_length * self.amount
+        else:
+            self.total = self.unit_price * self.amount
+        super().save(*args, **kwargs)
+
+    def total_price(self):
+        return self.total
+
+    def __str__(self):
+        return f"{self.product.name} x{self.amount} ({self.purchase_order})"
+
