@@ -14,6 +14,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from django.urls import include
@@ -22,5 +24,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('systemcore.urls')),  # Include URLs from the systemcore app
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # The above line includes the URL patterns defined in the systemcore app's urls.py file.
 # This allows the main project to route requests to the appropriate views in the systemcore app.
