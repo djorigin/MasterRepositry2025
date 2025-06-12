@@ -8,7 +8,17 @@ import string
 # from django.utils.translation import gettext_lazy as _  # For internationalization (optional)
 # Create your models here.
 
+class Country(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name="Country Name")  # e.g., 'United States', 'Canada'
+    iso_code = models.CharField(max_length=3, unique=True, verbose_name="ISO-CODE")  # e.g., 'USA', 'GBR'
 
+    class Meta:
+        verbose_name = "Country"
+        verbose_name_plural = "Countries"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
 
 class SystemCoreColourCode(models.Model):
     name = models.CharField(max_length=100, unique=True)   
@@ -92,7 +102,7 @@ class Supplier(models.Model):
     city = models.CharField(max_length=100, blank=True, null=True, verbose_name="City")
     state = models.CharField(max_length=100, blank=True, null=True, verbose_name="State/Province")
     postal_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Postal Code")
-    country = models.CharField(max_length=100, blank=True, null=True, verbose_name="Country")
+    country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Country")
     tax_id = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tax ID")
     is_manufacturer = models.BooleanField(default=False, verbose_name="Is Manufacturer")
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
