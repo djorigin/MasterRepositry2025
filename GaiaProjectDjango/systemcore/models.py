@@ -43,3 +43,32 @@ class SystemCoreColourCode(models.Model):
         if self.name:
             self.name = self.name.title()
         super().save(*args, **kwargs)
+        
+
+
+class RJ45Pinout(models.Model):
+    COLOR_CHOICES = [
+        ('WHITE ORANGE', 'White Orange'),
+        ('ORANGE', 'Orange'),
+        ('WHITE GREEN', 'White Green'),
+        ('BLUE', 'Blue'),
+        ('WHITE BLUE', 'White Blue'),
+        ('GREEN', 'Green'),
+        ('WHITE BROWN', 'White Brown'),
+        ('BROWN', 'Brown'),
+    ]
+
+    name = models.CharField(max_length=100)  # e.g., "T568A"
+    pin_number = models.PositiveSmallIntegerField()  # 1 to 8
+    color_code = models.CharField(max_length=20, choices=COLOR_CHOICES)
+
+    class Meta:
+        unique_together = (
+            ('name', 'pin_number'),
+            ('name', 'color_code'),  # Ensures color is only used once per pinout
+        )
+        verbose_name = "RJ45 Pinout"
+        verbose_name_plural = "RJ45 Pinouts"
+
+    def __str__(self):
+        return f"{self.name} - Pin {self.pin_number}: {self.color_code}"
