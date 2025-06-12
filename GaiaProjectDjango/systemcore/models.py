@@ -3,6 +3,7 @@
 # Django imports
 from django.db import models, transaction, IntegrityError
 from django.core.validators import RegexValidator, MinValueValidator
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 import random
 import string
@@ -216,4 +217,63 @@ class Client(models.Model):
 
     def __str__(self):
         return self.name
+
+class Cable(models.Model):
+    CABLE_TYPE_CHOICES = [
+        ('CAT5', 'Cat 5'),
+        ('CAT5E', 'Cat 5e'),
+        ('CAT6', 'Cat 6'),
+        ('CAT6A', 'Cat 6a'),
+        ('CAT7', 'Cat 7'),
+        ('CAT8', 'Cat 8'),
+        # Add more types as needed
+    ]
+
+    name = models.CharField(max_length=100, verbose_name="Cable Name")
+    type = models.CharField(max_length=10, choices=CABLE_TYPE_CHOICES, verbose_name="Cable Type")
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, verbose_name="Product Code")
+    color = models.ForeignKey(SystemCoreColourCode, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Color Code")
+    gbps = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name="Speed (Gbps)")
+    mbps = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Speed (Mbps)")
+
+    class Meta:
+        verbose_name = "Cable"
+        verbose_name_plural = "Cables"
+        ordering = ['name']
+
+    def clean(self):
+        # Ensure at least one of gbps or mbps is provided
+        if self.gbps is None and self.mbps is None:
+            raise ValidationError("You must provide either Gbps or Mbps.")
+
+        # If only one is provided, calculate the other
+        if self.gbps is not None and self.mbps is None:
+            self.mbps = self.gbps * 1000
+        elif self.mbps is not None and self.gbps is None:
+            self.gbps = self.mbps / 1000
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.type}) - {self.gbps} Gbps / {self.mbps} Mbps"
+
+class CatRJ45(models.Model):
+    RJ45_TYPE_CHOICES = [
+        ('FEMALE', 'RJ45 Female'),
+        ('MALE', 'RJ45 Male'),
+    ]
+
+    type = models.CharField(max_length=6, choices=RJ45_TYPE_CHOICES, verbose_name="Connector Type")
+    name = models.CharField(max_length=100, verbose_name="Connector Name")
+    pinout = models.ForeignKey(RJ45Pinout, on_delete=models.CASCADE, verbose_name="Pinout")
+
+    class Meta:
+        verbose_name = "Cat RJ45 Connector"
+        verbose_name_plural = "Cat RJ45 Connectors"
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_type_display()})"
 
