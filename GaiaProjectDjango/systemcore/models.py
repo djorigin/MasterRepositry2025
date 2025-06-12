@@ -232,7 +232,7 @@ class Cable(models.Model):
 
     name = models.CharField(max_length=100, verbose_name="Cable Name")
     type = models.CharField(max_length=10, choices=CABLE_TYPE_CHOICES, verbose_name="Cable Type")
-    product = models.OneToOneField(Product, on_delete=models.CASCADE, verbose_name="Product Code")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Product Code")
     color = models.ForeignKey(SystemCoreColourCode, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Color Code")
     gbps = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name="Speed (Gbps)")
     mbps = models.DecimalField(max_digits=7, decimal_places=2, blank=True, null=True, verbose_name="Speed (Mbps)")
@@ -280,7 +280,7 @@ class CatRJ45(models.Model):
 
 class Terminal(models.Model):
     name = models.CharField(max_length=100, verbose_name="Terminal Name")
-    product = models.OneToOneField(Product, on_delete=models.CASCADE, verbose_name="Product Code")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Product Code")
 
     class Meta:
         verbose_name = "Terminal"
