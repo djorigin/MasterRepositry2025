@@ -5,6 +5,7 @@ from django.db import models, transaction, IntegrityError
 from django.core.validators import RegexValidator, MinValueValidator
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+from django.utils import timezone
 import random
 import string
 from decimal import Decimal
@@ -302,4 +303,76 @@ class TerminalInput(models.Model):
 
     def __str__(self):
         return f"{self.terminal.name} - Input {self.input_number}: {self.catrj45.name}"
+
+def generate_system_build_number():
+    prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
+    mid = ''.join(random.choices(string.digits, k=4))
+    end = ''.join(random.choices(string.digits, k=5))
+    return f"{prefix}-{mid}-{end}"
+
+def generate_code_sequence():
+    part1 = ''.join(random.choices(string.digits, k=3))
+    part2 = ''.join(random.choices(string.digits, k=3))
+    return f"{part1}-{part2}"
+
+class SystemBuilder(models.Model):
+    systemBuildNumber = models.CharField(max_length=50, primary_key=True, editable=False, verbose_name="System Build Number")
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, verbose_name="Client")
+    date_created = models.DateTimeField(default=timezone.now, verbose_name="Date Created")
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    is_complete = models.BooleanField(default=False, verbose_name="Is Complete")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    designer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Designer")
+
+    class Meta:
+        verbose_name = "System Build"
+        verbose_name_plural = "System Builds"
+        ordering = ['-date_created']
+
+    def save(self, *args, **kwargs):
+        if not self.systemBuildNumber:
+            for _ in range(10):
+                code = generate_system_build_number()
+                if not SystemBuilder.objects.filter(systemBuildNumber=code).exists():
+                    self.systemBuildNumber = code
+                    break
+            else:
+                raise ValueError("Could not generate a unique system build number after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"System Build {self.systemBuildNumber} for {self.client.name}"
+
+class SystemBuilderConnection(models.Model):
+    system_builder = models.ForeignKey(SystemBuilder, on_delete=models.CASCADE, related_name='connections', verbose_name="System Build")
+    code_sequence = models.CharField(max_length=7, verbose_name="Connection Code Sequence")  # e.g., 123-456
+    terminal_a = models.ForeignKey(Terminal, on_delete=models.CASCADE, related_name='terminal_a_connections', verbose_name="Terminal A")
+    terminal_b = models.ForeignKey(Terminal, on_delete=models.CASCADE, related_name='terminal_b_connections', verbose_name="Terminal B")
+    cable = models.ForeignKey(Cable, on_delete=models.CASCADE, verbose_name="Cable")
+    label = models.CharField(max_length=100, verbose_name="Label (e.g. TV, Port 1)")
+
+    class Meta:
+        verbose_name = "System Build Connection"
+        verbose_name_plural = "System Build Connections"
+        unique_together = ('system_builder', 'code_sequence')  # Unique per build
+
+    def save(self, *args, **kwargs):
+        if not self.code_sequence:
+            for _ in range(10):
+                code = generate_code_sequence()
+                if not SystemBuilderConnection.objects.filter(system_builder=self.system_builder, code_sequence=code).exists():
+                    self.code_sequence = code
+                    break
+            else:
+                raise ValueError("Could not generate a unique code sequence for this build after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        # Ensure a cable always has two terminals
+        if not self.terminal_a or not self.terminal_b:
+            raise ValidationError("Each cable must have two terminal points.")
+
+    def __str__(self):
+        return f"{self.label} ({self.code_sequence}) in {self.system_builder}"
 
