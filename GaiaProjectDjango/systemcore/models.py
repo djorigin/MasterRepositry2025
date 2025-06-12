@@ -2,9 +2,10 @@
 # systemcore/models.py
 # Django imports
 from django.db import models, transaction, IntegrityError
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator
 import random
 import string
+from decimal import Decimal
 # from django.utils.translation import gettext_lazy as _  # For internationalization (optional)
 # Create your models here.
 
@@ -132,4 +133,45 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
+
+def generate_product_code():
+    prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
+    mid = ''.join(random.choices(string.digits, k=4))
+    end = ''.join(random.choices(string.digits, k=5))
+    return f"{prefix}-{mid}-{end}"
+
+class Product(models.Model):
+    product_code = models.CharField(max_length=50, primary_key=True, editable=False, verbose_name="Product Code")
+    name = models.CharField(max_length=255, verbose_name="Product Name")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
+    supplier = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Supplier")
+    supplier_product_code = models.CharField(max_length=100, blank=True, null=True, verbose_name="Supplier Product Code")
+    manufacturer = models.ForeignKey(Supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name='manufactured_products', verbose_name="Manufacturer")
+    manufacturer_product_code = models.CharField(max_length=100, blank=True, null=True, verbose_name="Manufacturer Product Code")
+    image = models.ImageField(upload_to='product_images/', blank=True, null=True, verbose_name="Product Image")
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))], verbose_name="Unit Price")
+    quantity_per_unit = models.PositiveIntegerField(default=1, verbose_name="Quantity Per Unit (e.g. per pack)")
+    unit = models.CharField(max_length=50, default="pcs", verbose_name="Unit (e.g. pcs, pack, box)")
+    is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.product_code:
+            for _ in range(10):
+                code = generate_product_code()
+                if not Product.objects.filter(product_code=code).exists():
+                    self.product_code = code
+                    break
+            else:
+                raise ValueError("Could not generate a unique product code after 10 attempts.")
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.name} ({self.product_code})"
 
