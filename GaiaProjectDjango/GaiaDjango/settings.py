@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'systemcore',  # Custom app for system core functionalities
     'widget_tweaks',  # Custom app for widget tweaks
+    'django_htmx',  # HTMX integration for Django
 ]
 
 MIDDLEWARE = [
@@ -48,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_htmx.middleware.HtmxMiddleware',  # Middleware for HTMX support
 ]
 
 ROOT_URLCONF = 'GaiaDjango.urls'

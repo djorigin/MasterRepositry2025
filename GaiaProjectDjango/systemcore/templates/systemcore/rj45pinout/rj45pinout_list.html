@@ -8,7 +8,14 @@
 <div class="container">
   <ul>
     {% for pinout in pinouts %}
-      <li>{{ pinout.name }} - Pin {{ pinout.pin_number }}: {{ pinout.color_code }}</li>
+      <li>
+        <strong>{{ pinout.name }}</strong>
+        <ul>
+          {% for pin in pinout.pins.all %}
+            <li>Pin {{ pin.pin_number }}: {{ pin.color_code }}</li>
+          {% endfor %}
+        </ul>
+      </li>
     {% empty %}
       <li>No pinouts found.</li>
     {% endfor %}

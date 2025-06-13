@@ -127,7 +127,7 @@ class RJ45PinoutListView(ListView):
     model = RJ45Pinout
     template_name = 'systemcore/rj45pinout/rj45pinout_list.html'
     context_object_name = 'pinouts'
-    ordering = ['name', 'pin_number']  # Optional: specify ordering of the list
+    ordering = ['name']  # Optional: specify ordering of the list
     paginate_by = 20  # Optional: add pagination
 
 def index(request):
