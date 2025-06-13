@@ -1,9 +1,9 @@
 from django.views.generic.edit import FormView
-from django.forms import modelformset_factory
+from django.forms import modelformset_factory, modelform_factory
 from django.shortcuts import render, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy, reverse
-from .models import  SystemCoreColourCode, RJ45Pinout
+from .models import  SystemCoreColourCode, RJ45Pinout, RJ45Pin
 from django.db.models import Q
 
 
@@ -92,40 +92,36 @@ class ColorCodeDeleteView(DeleteView):
     success_url = reverse_lazy('systemcore:colorcode_list')  # Redirect after successful deletion
     context_object_name = 'object'  # Optional: customize context variable
 
-class RJ45PinoutBulkCreateView(FormView):
+class RJ45PinoutBulkCreateView(View):
     template_name = 'systemcore/rj45pinout/rj45pinout_formset.html'
     success_url = reverse_lazy('systemcore:rj45pinout_list')
 
-    def get_form_class(self):
-        return modelformset_factory(
-            RJ45Pinout,
-            fields=('pin_number', 'color_code'),  # Remove 'name' from formset fields
-            extra=8,
-            max_num=8
-        )
-
-    def get_form(self, form_class=None):
-        form_class = self.get_form_class()
-        if self.request.method == 'POST':
-            return form_class(self.request.POST)
-        return form_class(queryset=RJ45Pinout.objects.none())
+    def get(self, request, *args, **kwargs):
+        PinoutForm = modelform_factory(RJ45Pinout, fields=['name', 'image', 'notes', 'standards'])
+        PinFormSet = modelformset_factory(RJ45Pin, fields=['pin_number', 'color_code'], extra=8, max_num=8)
+        pinout_form = PinoutForm()
+        pin_formset = PinFormSet(queryset=RJ45Pin.objects.none())
+        return render(request, self.template_name, {
+            'pinout_form': pinout_form,
+            'pin_formset': pin_formset,
+        })
 
     def post(self, request, *args, **kwargs):
-        formset = self.get_form()
-        name = request.POST.get('name')
-        if formset.is_valid():
-            instances = formset.save(commit=False)
-            for instance in instances:
-                instance.name = name
-                instance.save()
+        PinoutForm = modelform_factory(RJ45Pinout, fields=['name', 'image', 'notes', 'standards'])
+        PinFormSet = modelformset_factory(RJ45Pin, fields=['pin_number', 'color_code'], extra=8, max_num=8)
+        pinout_form = PinoutForm(request.POST, request.FILES)
+        pin_formset = PinFormSet(request.POST)
+        if pinout_form.is_valid() and pin_formset.is_valid():
+            pinout = pinout_form.save()
+            pins = pin_formset.save(commit=False)
+            for pin in pins:
+                pin.pinout = pinout
+                pin.save()
             return redirect(self.success_url)
-        # If not valid, re-render the page with errors
-        return self.render_to_response(self.get_context_data(formset=formset))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['formset'] = kwargs.get('formset', self.get_form())
-        return context
+        return render(request, self.template_name, {
+            'pinout_form': pinout_form,
+            'pin_formset': pin_formset,
+        })
     
 class RJ45PinoutListView(ListView):
     model = RJ45Pinout
