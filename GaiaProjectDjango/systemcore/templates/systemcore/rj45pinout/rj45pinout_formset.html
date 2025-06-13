@@ -6,23 +6,22 @@
  
 {% block content %}
   <h2>Create 8 RJ45 Pinouts</h2>
-  <form method="post">
-    {% csrf_token %}
-    <label for="id_name">Pinout Name:</label>
-    <input type="text" name="name" id="id_name" required>
-    {{ formset.management_form }}
-    <table>
+  <form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ pinout_form.as_p }}
+  {{ pin_formset.management_form }}
+  <table>
+    <tr>
+      <th>Pin Number</th>
+      <th>Color Code</th>
+    </tr>
+    {% for form in pin_formset %}
       <tr>
-        <th>Pin Number</th>
-        <th>Color Code</th>
+        <td>{{ form.pin_number }}</td>
+        <td>{{ form.color_code }}</td>
       </tr>
-      {% for form in formset %}
-        <tr>
-          <td>{{ form.pin_number }}</td>
-          <td>{{ form.color_code }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-    <button type="submit">Save All</button>
-  </form>
+    {% endfor %}
+  </table>
+  <button type="submit">Save All</button>
+</form>
 {% endblock %}
