@@ -117,7 +117,14 @@ class RJ45PinoutBulkCreateView(View):
             for pin in pins:
                 pin.pinout = pinout
                 pin.save()
-            return redirect(self.success_url)
+            # Render the form again, empty, with created_name for the modal
+            PinoutForm = modelform_factory(RJ45Pinout, fields=['name', 'image', 'notes', 'standards'])
+            PinFormSet = modelformset_factory(RJ45Pin, fields=['pin_number', 'color_code'], extra=8, max_num=8)
+            return render(request, self.template_name, {
+                'pinout_form': PinoutForm(),
+                'pin_formset': PinFormSet(queryset=RJ45Pin.objects.none()),
+                'created_name': pinout.name,
+    })
         return render(request, self.template_name, {
             'pinout_form': pinout_form,
             'pin_formset': pin_formset,
