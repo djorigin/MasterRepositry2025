@@ -68,6 +68,22 @@ class SystemCoreColourCode(models.Model):
 
 
 class RJ45Pinout(models.Model):
+    name = models.CharField(max_length=100, unique=True)  # e.g., "T568A"
+    image = models.ImageField(upload_to='rj45pinout_images/', blank=True, null=True, verbose_name="Pinout Image")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    standards = models.CharField(max_length=255, blank=True, null=True, verbose_name="Standards")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Updated At")
+
+    class Meta:
+        verbose_name = "RJ45 Pinout"
+        verbose_name_plural = "RJ45 Pinouts"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+class RJ45Pin(models.Model):
     COLOR_CHOICES = [
         ('WHITE ORANGE', 'White Orange'),
         ('ORANGE', 'Orange'),
@@ -79,20 +95,20 @@ class RJ45Pinout(models.Model):
         ('BROWN', 'Brown'),
     ]
 
-    name = models.CharField(max_length=100)  # e.g., "T568A"
+    pinout = models.ForeignKey(RJ45Pinout, on_delete=models.CASCADE, related_name='pins', verbose_name="Pinout")
     pin_number = models.PositiveSmallIntegerField()  # 1 to 8
     color_code = models.CharField(max_length=20, choices=COLOR_CHOICES)
 
     class Meta:
-        unique_together = (
-            ('name', 'pin_number'),
-            ('name', 'color_code'),  # Ensures color is only used once per pinout
-        )
-        verbose_name = "RJ45 Pinout"
-        verbose_name_plural = "RJ45 Pinouts"
+        unique_together = (('pinout', 'pin_number'),)
+        ordering = ['pinout', 'pin_number']
+        verbose_name = "RJ45 Pin"
+        verbose_name_plural = "RJ45 Pins"
 
     def __str__(self):
-        return f"{self.name} - Pin {self.pin_number}: {self.color_code}"
+        return f"{self.pinout.name} - Pin {self.pin_number}: {self.color_code}"
+    
+ 
 
 def generate_supplier_code():
     prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
