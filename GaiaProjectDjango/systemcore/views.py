@@ -1,12 +1,13 @@
 from django.views.generic.edit import FormView,UpdateView,DeleteView
+from django.views.generic.detail import DetailView
 from django.forms import modelformset_factory, modelform_factory
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy, reverse
-from .models import  SystemCoreColourCode, RJ45Pinout, RJ45Pin
+from .models import  SystemCoreColourCode, RJ45Pinout, RJ45Pin, Supplier
 from django.db.models import Q
 from django.http import HttpResponse
-from .forms import RJ45PinoutForm, RJ45PinForm
+from .forms import RJ45PinoutForm, RJ45PinForm, SupplierForm
 
 
 class HomeView(TemplateView):
@@ -389,3 +390,51 @@ def testimonials(request):
     products, or services, and helping to build trust and credibility with potential users.
     """
     return render(request, 'systemcore/testimonials.html', {})
+
+
+class SupplierCreateView(CreateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'systemcore/supplier/supplier_form.html'
+    success_url = reverse_lazy('systemcore:supplier_list')  # Adjust as needed
+
+    def form_valid(self, form):
+        # Place for business logic before saving
+        response = super().form_valid(form)
+        # You can add messages or custom logic here
+        return response
+
+    def form_invalid(self, form):
+        # Optionally handle HTMX requests differently
+        if self.request.htmx:
+            return self.render_to_response(self.get_context_data(form=form))
+        return super().form_invalid(form)
+    
+class SupplierListView(ListView):
+    model = Supplier
+    template_name = 'systemcore/supplier/supplier_list.html'
+    context_object_name = 'suppliers'
+    paginate_by = 20  # Optional: add pagination
+    
+class SupplierDetailView(DetailView):
+    model = Supplier
+    template_name = 'systemcore/supplier/supplier_detail.html'
+    context_object_name = 'supplier'
+    pk_url_kwarg = 'pk'  # or use 'supplier_code' if that's your primary key
+    
+class SupplierUpdateView(UpdateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'systemcore/supplier/supplier_edit_form.html'
+    context_object_name = 'supplier'
+    pk_url_kwarg = 'pk'
+    
+    def get_success_url(self):
+        return reverse_lazy('systemcore:supplier_detail', kwargs={'pk': self.object.supplier_code})
+    
+class SupplierDeleteView(DeleteView):
+    model = Supplier
+    template_name = 'systemcore/supplier/supplier_confirm_delete.html'
+    context_object_name = 'supplier'
+    pk_url_kwarg = 'pk'
+    success_url = reverse_lazy('systemcore:supplier_list')

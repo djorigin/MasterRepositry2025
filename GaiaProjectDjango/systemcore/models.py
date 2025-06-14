@@ -9,6 +9,7 @@ from django.utils import timezone
 import random
 import string
 from decimal import Decimal
+from django.urls import reverse
 # from django.utils.translation import gettext_lazy as _  # For internationalization (optional)
 # Create your models here.
 
@@ -157,6 +158,8 @@ class Supplier(models.Model):
 
     def __str__(self):
         return self.name
+    def get_absolute_url(self):
+        return reverse('systemcore:supplier_detail', kwargs={'pk': self.supplier_code})
 
 def generate_product_code():
     prefix = ''.join(random.choices(string.ascii_uppercase, k=3))
