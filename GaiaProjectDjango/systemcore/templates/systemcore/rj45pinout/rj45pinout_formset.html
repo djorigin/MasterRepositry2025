@@ -1,0 +1,114 @@
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+
+{% block title %}Create RJ45 Pinout{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="fa fa-network-wired"></i> Create RJ45 Pinout</h4>
+        </div>
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data" autocomplete="off">
+            {% csrf_token %}
+            <div class="mb-3">
+              {{ pinout_form.non_field_errors }}
+              {% for field in pinout_form %}
+                <div class="mb-3">
+                  <label class="form-label">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}
+                    <div class="form-text">{{ field.help_text }}</div>
+                  {% endif %}
+                  {% for error in field.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            </div>
+            <h5 class="mt-4">Pins</h5>
+            {{ pin_formset.management_form }}
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>Pin Number</th>
+                    <th>Color Code</th>
+                    <th>Preview</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for form in pin_formset %}
+                    <tr>
+                      <td>
+                        {{ form.pin_number }}
+                        {% for error in form.pin_number.errors %}
+                          <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                      </td>
+                      <td>
+                        {{ form.color_code }}
+                        {% for error in form.color_code.errors %}
+                          <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                      </td>
+                      <td>
+                        <span class="color-preview" style="display:inline-block;width:32px;height:32px;border-radius:50%;border:1px solid #ccc;background-color:var(--color-{{ form.prefix }});"></span>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-end">
+              <button type="submit" class="btn btn-success">
+                <i class="fa fa-save"></i> Save All
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{% static 'systemcore/js/rj45pinout_color_preview.js' %}"></script>
+{% if created_name %}
+<!-- Bootstrap Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="successModalLabel">Success!</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        File <strong>{{ created_name }}</strong> has been successfully created and added to the database.<br>
+        Add another record?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="addAnotherBtn" data-bs-dismiss="modal">Yes</button>
+        <a href="{% url 'systemcore:rj45pinout_list' %}" class="btn btn-secondary">No, go to list</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = new bootstrap.Modal(document.getElementById('successModal'));
+    modal.show();
+    // Optionally, reset the form when "Yes" is clicked
+    document.getElementById('addAnotherBtn').addEventListener('click', function() {
+      document.querySelector('form').reset();
+      // Optionally, reset color previews if needed
+      document.querySelectorAll('.color-preview').forEach(function(span) {
+        span.style.backgroundColor = '#eee';
+      });
+    });
+  });
+</script>
+{% endif %}
+
+{% endblock %}

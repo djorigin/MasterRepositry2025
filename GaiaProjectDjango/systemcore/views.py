@@ -1,24 +1,81 @@
-from django.shortcuts import render
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-from django.urls import reverse_lazy
-from .models import  SystemCoreColourCode
+from django.views.generic.edit import FormView,UpdateView,DeleteView
+from django.views.generic.detail import DetailView
+from django.forms import modelformset_factory, modelform_factory
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
+from django.urls import reverse_lazy, reverse
+from .models import  SystemCoreColourCode, RJ45Pinout, RJ45Pin, Supplier
+from django.db.models import Q
+from django.http import HttpResponse
+from .forms import RJ45PinoutForm, RJ45PinForm, SupplierForm
 
 
 class HomeView(TemplateView):
     template_name = 'systemcore/index.html'
 
 class ColorCodeListView(ListView):
-    model = SystemCoreColourCode  # Replace with your model name
-    paginate_by = 15 # Optional: number of items per page
-    ordering = ['name']  # Optional: default ordering of the list
-    # Optional: customize the template and context variable 
-    template_name = 'systemcore/colorcode_list.html'  # Replace with your template name
-    context_object_name = 'objects'        # Optional: customize context variable
+    model = SystemCoreColourCode
+    paginate_by = 15
+    ordering = ['name']
+    template_name = 'systemcore/colorcode_list.html'
+    context_object_name = 'objects'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        q = self.request.GET.get('q', '')
+        if q:
+            queryset = queryset.filter(
+                Q(name__icontains=q) |
+                Q(hex_code__icontains=q) |
+                Q(rgb_value__icontains=q)
+            )
+        return queryset.order_by(*self.ordering)
+
+    def get(self, request, *args, **kwargs):
+        q = request.GET.get('q', '')
+        if q:
+            matches = self.model.objects.filter(
+                Q(name__iexact=q) |
+                Q(hex_code__iexact=q) |
+                Q(rgb_value__iexact=q)
+            )
+            if matches.count() == 1:
+                return redirect('systemcore:colorcode_detail', pk=matches.first().pk)
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        return context
 
 class ColorCodeDetailView(DetailView):
     model = SystemCoreColourCode  # Replace with your model name
     template_name = 'systemcore/colorcode_detail.html'  # Replace with your template name
     context_object_name = 'object'  # Optional: customize context variable
+    
+  
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        current_color = self.object
+
+        # Extract keyword from the name (e.g., "Blue" in "Sky Blue")
+        # You can use a list of keywords or just use the first word
+        keywords = ["Blue", "Black", "Red", "Green", "Yellow", "White", "Purple", "Orange", "Pink", "Brown", "Gray", "Grey"]
+        found_keyword = None
+        for word in keywords:
+            if word.lower() in current_color.name.lower():
+                found_keyword = word
+                break
+
+        if found_keyword:
+            related_colors = SystemCoreColourCode.objects.filter(
+                name__icontains=found_keyword
+            ).exclude(pk=current_color.pk)[:10]
+        else:
+            related_colors = SystemCoreColourCode.objects.none()
+
+        context['related_colors'] = related_colors
+        return context
 
 class ColorCodeCreateView(CreateView):
     model = SystemCoreColourCode  # Replace with your model name
@@ -37,6 +94,117 @@ class ColorCodeDeleteView(DeleteView):
     template_name = 'systemcore/colorcode_confirm_delete.html'  # Replace with your template name
     success_url = reverse_lazy('systemcore:colorcode_list')  # Redirect after successful deletion
     context_object_name = 'object'  # Optional: customize context variable
+
+class RJ45PinoutBulkCreateView(View):
+    template_name = 'systemcore/rj45pinout/rj45pinout_formset.html'
+    success_url = reverse_lazy('systemcore:rj45pinout_list')
+
+    def get(self, request, *args, **kwargs):
+        PinoutForm = modelform_factory(RJ45Pinout, fields=['name', 'image', 'notes', 'standards'])
+        PinFormSet = modelformset_factory(RJ45Pin, fields=['pin_number', 'color_code'], extra=8, max_num=8)
+        pinout_form = PinoutForm()
+        pin_formset = PinFormSet(queryset=RJ45Pin.objects.none())
+        return render(request, self.template_name, {
+            'pinout_form': pinout_form,
+            'pin_formset': pin_formset,
+        })
+
+    def post(self, request, *args, **kwargs):
+        PinoutForm = modelform_factory(RJ45Pinout, fields=['name', 'image', 'notes', 'standards'])
+        PinFormSet = modelformset_factory(RJ45Pin, fields=['pin_number', 'color_code'], extra=8, max_num=8)
+        pinout_form = PinoutForm(request.POST, request.FILES)
+        pin_formset = PinFormSet(request.POST)
+        if pinout_form.is_valid() and pin_formset.is_valid():
+            pinout = pinout_form.save()
+            pins = pin_formset.save(commit=False)
+            for pin in pins:
+                pin.pinout = pinout
+                pin.save()
+            # Render the form again, empty, with created_name for the modal
+            PinoutForm = modelform_factory(RJ45Pinout, fields=['name', 'image', 'notes', 'standards'])
+            PinFormSet = modelformset_factory(RJ45Pin, fields=['pin_number', 'color_code'], extra=8, max_num=8)
+            return render(request, self.template_name, {
+                'pinout_form': PinoutForm(),
+                'pin_formset': PinFormSet(queryset=RJ45Pin.objects.none()),
+                'created_name': pinout.name,
+    })
+        return render(request, self.template_name, {
+            'pinout_form': pinout_form,
+            'pin_formset': pin_formset,
+        })
+    
+class RJ45PinoutListView(ListView):
+    model = RJ45Pinout
+    template_name = 'systemcore/rj45pinout/rj45pinout_list.html'
+    context_object_name = 'pinouts'
+    ordering = ['name']  # Optional: specify ordering of the list
+    paginate_by = 20  # Optional: add pagination
+
+class RJ45PinoutDetailView(DetailView):
+    model = RJ45Pinout
+    template_name = 'systemcore/rj45pinout/rj45pinout_detail.html'
+    context_object_name = 'pinout'
+
+from django.views.generic.edit import UpdateView
+from django.http import HttpResponse
+
+class RJ45PinoutUpdateView(UpdateView):
+    model = RJ45Pinout
+    form_class = RJ45PinoutForm
+    template_name = 'systemcore/rj45pinout/partials/pinout_edit_form.html'
+
+    def form_valid(self, form):
+        self.object = form.save()
+        # Return a partial to update the detail page, or a success message
+        return HttpResponse('<div class="alert alert-success">Pinout updated!</div>')
+    
+class RJ45PinoutDeleteView(DeleteView):
+    model = RJ45Pinout
+    template_name = 'systemcore/rj45pinout/partials/pinout_confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        # Return a simple success message and JS to redirect
+        return HttpResponse("""
+            <div class="modal-body">
+                <div class="alert alert-success">Pinout deleted! Redirecting...</div>
+            </div>
+            <script>
+                setTimeout(function() {
+                    window.location.href = '%s';
+                }, 1200);
+            </script>
+        """ % (reverse_lazy('systemcore:rj45pinout_list')))
+
+class RJ45PinUpdateView(UpdateView):
+    model = RJ45Pin
+    form_class = RJ45PinForm
+    template_name = 'systemcore/rj45pinout/partials/pin_edit_form.html'
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return HttpResponse(
+            '<div class="modal-body"><div class="alert alert-success">Pin updated! <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.reload()">Reload</button></div></div>'
+        )
+
+class RJ45PinDeleteView(DeleteView):
+    model = RJ45Pin
+    template_name = 'systemcore/rj45pinout/partials/pin_confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        return HttpResponse("""
+            <div class="modal-body">
+                <div class="alert alert-success">Pin deleted! Redirecting...</div>
+            </div>
+            <script>
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1200);
+            </script>
+        """)
 def index(request):
     """
     View function for the home page of the site.
@@ -221,4 +389,52 @@ def testimonials(request):
     feedback or reviews from users or customers, showcasing their experiences with the site, 
     products, or services, and helping to build trust and credibility with potential users.
     """
-    return render(request, 'systemcore/testimonials.html', {})       
+    return render(request, 'systemcore/testimonials.html', {})
+
+
+class SupplierCreateView(CreateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'systemcore/supplier/supplier_form.html'
+    success_url = reverse_lazy('systemcore:supplier_list')  # Adjust as needed
+
+    def form_valid(self, form):
+        # Place for business logic before saving
+        response = super().form_valid(form)
+        # You can add messages or custom logic here
+        return response
+
+    def form_invalid(self, form):
+        # Optionally handle HTMX requests differently
+        if self.request.htmx:
+            return self.render_to_response(self.get_context_data(form=form))
+        return super().form_invalid(form)
+    
+class SupplierListView(ListView):
+    model = Supplier
+    template_name = 'systemcore/supplier/supplier_list.html'
+    context_object_name = 'suppliers'
+    paginate_by = 20  # Optional: add pagination
+    
+class SupplierDetailView(DetailView):
+    model = Supplier
+    template_name = 'systemcore/supplier/supplier_detail.html'
+    context_object_name = 'supplier'
+    pk_url_kwarg = 'pk'  # or use 'supplier_code' if that's your primary key
+    
+class SupplierUpdateView(UpdateView):
+    model = Supplier
+    form_class = SupplierForm
+    template_name = 'systemcore/supplier/supplier_edit_form.html'
+    context_object_name = 'supplier'
+    pk_url_kwarg = 'pk'
+    
+    def get_success_url(self):
+        return reverse_lazy('systemcore:supplier_detail', kwargs={'pk': self.object.supplier_code})
+    
+class SupplierDeleteView(DeleteView):
+    model = Supplier
+    template_name = 'systemcore/supplier/supplier_confirm_delete.html'
+    context_object_name = 'supplier'
+    pk_url_kwarg = 'pk'
+    success_url = reverse_lazy('systemcore:supplier_list')

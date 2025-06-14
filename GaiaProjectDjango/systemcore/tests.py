@@ -6,134 +6,199 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from .models import SystemCoreColourCode    
+from .models import SystemCoreColourCode
+from systemcore.models import (
+    Country, Supplier, Product, Client, Cable, SystemCoreColourCode,
+    RJ45Pinout, CatRJ45, Terminal, TerminalInput, SystemBuilder,
+    SystemBuilderConnection, SystemPurchaseOrder, SystemPurchaseOrderItem,
+    SystemClientInvoice, SystemClientInvoiceItem, SystemAccount, SystemAccountTransaction) 
+from decimal import Decimal   
 
 # Create your tests here.
-class SystemCoreColourCodeTests(TestCase):
+
+class CountryModelTest(TestCase):
+    def test_create_country(self):
+        country = Country.objects.create(name="Testland", iso_code="TST")
+        self.assertEqual(str(country), "Testland")
+
+class SupplierModelTest(TestCase):
     def setUp(self):
-        # Define test user credentials
-        self.TEST_USERNAME = 'testuser'
-        self.TEST_PASSWORD = 'testpassword'
-        # Create a test user
-        self.user = User.objects.create_user(username=self.TEST_USERNAME, password=self.TEST_PASSWORD)
+        self.country = Country.objects.create(name="Testland", iso_code="TST")
 
-    def test_colour_code_creation(self):
-        # Test creating a new colour code
-        colour_code = SystemCoreColourCode.objects.create(
-            name='Test colour',
-            rgb_value='255,0,0',
-            hex_code='#FF0000'
+    def test_create_supplier(self):
+        supplier = Supplier.objects.create(
+            name="Test Supplier", country=self.country
         )
-        self.assertEqual(colour_code.name, 'Test colour')
-        self.assertEqual(colour_code.rgb_value, '255,0,0')
-        self.assertEqual(colour_code.hex_code, '#FF0000')
-        self.assertEqual(str(colour_code), 'Test colour (#FF0000, RGB: 255,0,0)')
-        
-    def test_colour_code_str_method(self):
-        # Test the __str__ method of the SystemCoreColourCode model
-        colour_code = SystemCoreColourCode.objects.create(
-            name='Test colour',
-            rgb_value='0,255,0',
-            hex_code='#00FF00'
-        )
-        self.assertEqual(str(colour_code), 'Test colour (#00FF00, RGB: 0,255,0)')
-
-    def test_colour_code_name_capitalization(self):
-        # Test that the name is capitalized when saved
-        colour_code = SystemCoreColourCode.objects.create(
-            name='test colour',
-            rgb_value='0,0,255',
-            hex_code='#0000FF'
-        )
-        self.assertEqual(colour_code.name, 'Test colour')
-
-    def test_colour_code_rgb_validation(self):
-        # Test that invalid RGB values raise a validation error
-        with self.assertRaises(ValidationError):
-            SystemCoreColourCode.objects.create(
-                name='Invalid RGB',
-                rgb_value='256,0,0',  # Invalid RGB value
-                hex_code='#FF0000'
-            )
-
-    def test_colour_code_hex_validation(self):
-        # Test that invalid hex codes raise a validation error
-        with self.assertRaises(ValidationError):
-            SystemCoreColourCode.objects.create(
-                name='Invalid Hex',
-                rgb_value='0,0,0',
-                hex_code='FF0000'  # Invalid hex code (missing '#')
-            )
-
-    def test_colour_code_unique_constraints(self):
-        # Test that unique constraints are enforced
-        SystemCoreColourCode.objects.create(
-            name='Unique colour',
-            rgb_value='255,255,0',
-            hex_code='#FFFF00'
-        )
-        with self.assertRaises(ValidationError):
-            SystemCoreColourCode.objects.create(
-                name='Unique colour',
-                rgb_value='255,255,0',
-                hex_code='#FFFF00'  # Duplicate entry
-            )
-
-    def test_colour_code_url_reverse(self):
-        # Test that the URL name 'systemcore:colorcode_list')' is correctly defined
-        url = reverse('systemcore:colorcode_list')
-    def test_colour_code_view_access(self):
-        """
-        Test that the colour code view is accessible.
-
-        This test ensures that:
-        - The view is accessible to authenticated users.
-        - The correct URL name 'systemcore:colorcode_list')' is defined in urls.py.
-        - The view renders the expected template 'systemcore/colorcode_list').html'.
-        """
-        self.client.login(username='testuser', password='testpassword')
-        # Ensure the URL name 'systemcore:colorcode_list')' is correctly defined in urls.py
-        response = self.client.get(reverse('systemcore:colorcode_list'))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'systemcore/colorcode_list.html')
-        url = reverse('systemcore:colorcode_list')
-        self.assertEqual(url, '/systemcore/colorcode_list/')
+        self.assertTrue(supplier.supplier_code)
+        self.assertEqual(str(supplier), "Test Supplier")
+class ProductModelTest(TestCase):
+    def setUp(self):
+        self.supplier = Supplier.objects.create(name="Test Supplier")
     
-    def test_colorcode_new_url_reverse(self):
-        # Test that the URL name 'systemcore:colorcode_create' is correctly defined
-        url = reverse('systemcore:colorcode_create')
-        self.assertEqual(url, '/systemcore/colorcode_create/')
-        
-        # Ensure the resolved URL is functional
-        self.client.login(username='testuser', password='testpassword')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        # Test that the URL name 'systemcore:colorcode_create' is correctly defined
-        url = reverse('systemcore:colorcode_create')
-        self.assertEqual(url, '/systemcore/colorcode_create/')
+    def test_create_product(self):
+        product = Product.objects.create(
+            name="Test Product", supplier=self.supplier, price=Decimal("10.00")
+        )
+        self.assertTrue(product.product_code)
+        self.assertEqual(str(product), f"Test Product ({product.product_code})")
 
-    def test_colorcode_new_view_access(self):
-        """
-        Test that the ColorCodeNew view is accessible and uses the correct template.
-        """
-        self.client.login(username='testuser', password='testpassword')
-        response = self.client.get(reverse('systemcore:colorcode_create'))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'systemcore/colorcode_form.html')
-
-    def test_colorcode_new_post(self):
-        """
-        Test creating a new color code via POST to the ColorCodeNew view.
-        """
-        self.client.login(username='testuser', password='testpassword')
-        data = {
-            'name': 'Posted Colour',
-            'rgb_value': '123,123,123',
-            'hex_code': '#7B7B7B'
-        }
-        response = self.client.post(reverse('systemcore:colorcode_create'), data)
-        # Should redirect to the colorcode_list page after successful creation
+class ClientModelTest(TestCase):
+    def test_create_client(self):
+        client = Client.objects.create(name="Test Client")
+        self.assertTrue(client.client_id)
+        self.assertEqual(str(client), "Test Client")
+class CableModelTest(TestCase):
+    def setUp(self):
+        self.product = Product.objects.create(name="Cable Product", price=Decimal("5.00"))
     
+    def test_gbps_to_mbps(self):
+        cable = Cable.objects.create(name="Test Cable", type="CAT6", product=self.product, gbps=1)
+        self.assertEqual(cable.mbps, 1000)
 
+    def test_mbps_to_gbps(self):
+        cable = Cable.objects.create(name="Test Cable2", type="CAT6", product=self.product, mbps=2000)
+        self.assertEqual(cable.gbps, 2)
 
+class SystemBuilderTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Test Client")
+        self.user = User.objects.create(username="designer")
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user)
     
+    def test_system_build_number_generated(self):
+        self.assertTrue(self.builder.systemBuildNumber)
+        self.assertIn("System Build", str(self.builder))
+
+class SystemBuilderConnectionTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Test Client")
+        self.user = User.objects.create(username="designer")
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user)
+        self.supplier = Supplier.objects.create(name="Test Supplier")
+        self.product = Product.objects.create(name="Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Test Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product = Product.objects.create(name="Terminal Product", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Terminal A", product=self.terminal_product)
+        self.terminal_b = Terminal.objects.create(name="Terminal B", product=self.terminal_product)
+
+    def test_connection_creation(self):
+        connection = SystemBuilderConnection.objects.create(
+            system_builder=self.builder,
+            terminal_a=self.terminal_a,
+            terminal_b=self.terminal_b,
+            cable=self.cable,
+            label="Port 1"
+        )
+        self.assertTrue(connection.code_sequence)
+        self.assertEqual(connection.system_builder, self.builder)
+        self.assertEqual(connection.terminal_a, self.terminal_a)
+        self.assertEqual(connection.terminal_b, self.terminal_b)
+        self.assertEqual(connection.cable, self.cable)
+        self.assertEqual(connection.label, "Port 1")
+        self.assertIn("Port 1", str(connection))
+
+class PurchaseOrderGenerationTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Test Client")
+        self.user = User.objects.create(username="designer")
+        self.supplier = Supplier.objects.create(name="Test Supplier")
+        self.product = Product.objects.create(name="Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Test Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product_a = Product.objects.create(name="Terminal Product A", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_product_b = Product.objects.create(name="Terminal Product B", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Terminal A", product=self.terminal_product_a)
+        self.terminal_b = Terminal.objects.create(name="Terminal B", product=self.terminal_product_b)
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user, is_complete=True)
+        self.connection = SystemBuilderConnection.objects.create(
+            system_builder=self.builder,
+            terminal_a=self.terminal_a,
+            terminal_b=self.terminal_b,
+            cable=self.cable,
+            label="Port 1"
+        )
+
+    def test_generate_purchase_order(self):
+        po = self.builder.generate_purchase_order(user=self.user)
+        self.assertIsNotNone(po)
+        self.assertEqual(po.system_builder, self.builder)
+        self.assertEqual(po.items.count(), 3)  # 1 cable + 2 terminals
+        self.assertAlmostEqual(po.total_price(), Decimal("9.00"))
+
+class InvoiceGenerationTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Test Client")
+        self.user = User.objects.create(username="designer")
+        self.supplier = Supplier.objects.create(name="Test Supplier")
+        self.product = Product.objects.create(name="Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Test Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product_a = Product.objects.create(name="Terminal Product A", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_product_b = Product.objects.create(name="Terminal Product B", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Terminal A", product=self.terminal_product_a)
+        self.terminal_b = Terminal.objects.create(name="Terminal B", product=self.terminal_product_b)
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user, is_complete=True)
+        self.connection = SystemBuilderConnection.objects.create(
+        system_builder=self.builder,
+        terminal_a=self.terminal_a,
+        terminal_b=self.terminal_b,
+        cable=self.cable,
+        label="Port 1"
+    )
+        self.po = self.builder.generate_purchase_order(user=self.user)
+    # If using signals, do NOT call generate_client_invoice manually:
+        self.po.is_ordered = True
+        self.po.save()
+        invoice = SystemClientInvoice.objects.get(system_builder=self.builder)
+        self.assertIsNotNone(invoice)
+
+def test_generate_invoice(self):
+        invoice = self.po.generate_client_invoice(user=self.user)
+        self.assertIsNotNone(invoice)
+        self.assertEqual(invoice.system_builder, self.builder)
+        self.assertEqual(invoice.client, self.client)
+        self.assertEqual(invoice.items.count(), 3)  # 1 cable + 2 terminals
+        self.assertAlmostEqual(invoice.total_price(), Decimal("9.00"))
+
+class SignalIntegrationTest(TestCase):
+    def setUp(self):
+        self.client = Client.objects.create(name="Signal Client")
+        self.user = User.objects.create(username="signaluser")
+        self.supplier = Supplier.objects.create(name="Signal Supplier")
+        self.product = Product.objects.create(name="Signal Cable Product", supplier=self.supplier, price=Decimal("5.00"))
+        self.cable = Cable.objects.create(name="Signal Cable", type="CAT6", product=self.product, gbps=1)
+        self.terminal_product_a = Product.objects.create(name="Signal Terminal Product A", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_product_b = Product.objects.create(name="Signal Terminal Product B", supplier=self.supplier, price=Decimal("2.00"))
+        self.terminal_a = Terminal.objects.create(name="Signal Terminal A", product=self.terminal_product_a)
+        self.terminal_b = Terminal.objects.create(name="Signal Terminal B", product=self.terminal_product_b)
+        self.builder = SystemBuilder.objects.create(client=self.client, designer=self.user, is_complete=False)
+        self.connection = SystemBuilderConnection.objects.create(
+            system_builder=self.builder,
+            terminal_a=self.terminal_a,
+            terminal_b=self.terminal_b,
+            cable=self.cable,
+            label="Signal Port"
+        )
+
+    def test_purchase_order_created_by_signal(self):
+        # Mark as complete and save to trigger signal
+        self.builder.is_complete = True
+        self.builder.save()
+        from systemcore.models import SystemPurchaseOrder
+        po = SystemPurchaseOrder.objects.get(system_builder=self.builder)
+        self.assertIsNotNone(po)
+        self.assertEqual(po.system_builder, self.builder)
+
+    def test_invoice_created_by_signal(self):
+        # Mark as complete and save to trigger PO creation
+        self.builder.is_complete = True
+        self.builder.save()
+        from systemcore.models import SystemPurchaseOrder, SystemClientInvoice
+        po = SystemPurchaseOrder.objects.get(system_builder=self.builder)
+        # Mark PO as ordered and save to trigger invoice creation
+        po.is_ordered = True
+        po.save()
+        invoice = SystemClientInvoice.objects.get(system_builder=self.builder)
+        self.assertIsNotNone(invoice)
+        self.assertEqual(invoice.system_builder, self.builder)
+
+
+

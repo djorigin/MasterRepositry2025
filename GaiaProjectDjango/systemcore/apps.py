@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class SystemcoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'systemcore'
+
+    def ready(self):
+        import systemcore.signals

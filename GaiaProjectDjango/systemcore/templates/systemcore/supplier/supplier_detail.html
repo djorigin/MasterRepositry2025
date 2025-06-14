@@ -1,0 +1,61 @@
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+
+{% block title %}Supplier: {{ supplier.name }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'systemcore:supplier_list' %}" class="btn btn-outline-primary mb-3 me-2">
+  <i class="fa fa-home"></i> Back to List
+</a>
+<a href="{% url 'systemcore:supplier_edit' pk=supplier.supplier_code %}" class="btn btn-success mb-3 me-2">
+  <i class="fa fa-edit"></i> Edit
+</a>
+<a href="{% url 'systemcore:supplier_delete' pk=supplier.supplier_code %}" class="btn btn-danger mb-3">
+  <i class="fa fa-trash"></i> Delete
+</a>
+<div class="container my-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="fa fa-industry"></i> {{ supplier.name }}</h4>
+        </div>
+        <div class="card-body">
+          <p><strong>Legal Name:</strong> {{ supplier.legal_name|default:"—" }}</p>
+          <p><strong>Website:</strong>
+            {% if supplier.website %}
+              <a href="{{ supplier.website }}" target="_blank">{{ supplier.website }}</a>
+            {% else %}
+              —
+            {% endif %}
+          </p>
+          <p><strong>Email:</strong> {{ supplier.email|default:"—" }}</p>
+          <p><strong>Phone:</strong> {{ supplier.phone|default:"—" }}</p>
+          <p><strong>Address:</strong>
+            {{ supplier.street_address|default:"—" }},
+            {{ supplier.city|default:"" }}{% if supplier.state %}, {{ supplier.state }}{% endif %}{% if supplier.postal_code %}, {{ supplier.postal_code }}{% endif %}{% if supplier.country %}, {{ supplier.country }}{% endif %}
+          </p>
+          <p><strong>Tax ID:</strong> {{ supplier.tax_id|default:"—" }}</p>
+          <p><strong>Is Manufacturer:</strong>
+            {% if supplier.is_manufacturer %}
+              <span class="badge bg-info">Yes</span>
+            {% else %}
+              <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </p>
+          <p><strong>Is Active:</strong>
+            {% if supplier.is_active %}
+              <span class="badge bg-success">Yes</span>
+            {% else %}
+              <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </p>
+          <p><strong>Notes:</strong> {{ supplier.notes|default:"—" }}</p>
+          <p><strong>Created:</strong> {{ supplier.created_at|date:"SHORT_DATETIME_FORMAT" }}</p>
+          <p><strong>Updated:</strong> {{ supplier.updated_at|date:"SHORT_DATETIME_FORMAT" }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
