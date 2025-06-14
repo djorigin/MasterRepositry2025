@@ -1,0 +1,141 @@
+{% extends "systemcore/systemcore_base.html" %}
+{% load static %}
+{% load django_htmx %}
+
+{% block title %}RJ45 Pinout: {{ pinout.name }}{% endblock %}
+
+{% block content %}
+
+<div id="test-output"></div>
+<div class="container my-4">
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h4 class="mb-0"><i class="fa fa-network-wired"></i> {{ pinout.name }}</h4>
+          <div>
+            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editPinoutModal">
+              <i class="fa fa-edit"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deletePinoutModal">
+              <i class="fa fa-trash"></i> Delete
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if pinout.image %}
+            <img src="{{ pinout.image.url }}" class="img-fluid mb-3" style="max-width:200px;">
+          {% endif %}
+          <p><strong>Notes:</strong> {{ pinout.notes|default:"—" }}</p>
+          <p><strong>Standards:</strong> {{ pinout.standards|default:"—" }}</p>
+          <p><strong>Created:</strong> {{ pinout.created_at|date:"SHORT_DATETIME_FORMAT" }}</p>
+          <p><strong>Updated:</strong> {{ pinout.updated_at|date:"SHORT_DATETIME_FORMAT" }}</p>
+          <h5 class="mt-4">Pins</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Pin Number</th>
+                  <th>Color Code</th>
+                  <th>Preview</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for pin in pinout.pins.all %}
+                  <tr>
+                    <td><span class="badge bg-secondary">Pin {{ pin.pin_number }}</span></td>
+                    <td>{{ pin.color_code }}</td>
+                    <td>
+                      <div class="pin-preview" style="background-color: {{ pin.color_code }}; width: 50px; height: 20px;"></div>
+                    </td>
+                    <td>
+                      {% if pin.pk %}
+                        <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editPinModal{{ pin.pk }}">
+                          <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deletePinModal{{ pin.pk }}">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                        <!-- Edit Pin Modal -->
+                        <div class="modal fade"
+                             id="editPinModal{{ pin.pk }}"
+                             tabindex="-1"
+                             aria-labelledby="editPinModalLabel{{ pin.pk }}"
+                             aria-hidden="true"
+                             hx-get="{% url 'systemcore:rj45pin_edit' pk=pin.pk %}"
+                             hx-target="#editPinModal{{ pin.pk }} .modal-content"
+                             hx-trigger="show.bs.modal">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-body text-center py-5">
+                                <div class="spinner-border text-primary" role="status"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- Delete Pin Modal -->
+                        <div class="modal fade"
+                             id="deletePinModal{{ pin.pk }}"
+                             tabindex="-1"
+                             aria-labelledby="deletePinModalLabel{{ pin.pk }}"
+                             aria-hidden="true"
+                             hx-get="{% url 'systemcore:rj45pin_delete' pk=pin.pk %}"
+                             hx-target="#deletePinModal{{ pin.pk }} .modal-content"
+                             hx-trigger="show.bs.modal">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-body text-center py-5">
+                                <div class="spinner-border text-danger" role="status"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Pinout Modal -->
+<div class="modal fade"
+     id="editPinoutModal"
+     tabindex="-1"
+     aria-labelledby="editPinoutModalLabel"
+     aria-hidden="true"
+     hx-get="{% url 'systemcore:rj45pinout_edit' pk=pinout.pk %}"
+     hx-target="#editPinoutModal .modal-content"
+     hx-trigger="show.bs.modal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-body text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Delete Pinout Modal -->
+<div class="modal fade"
+     id="deletePinoutModal"
+     tabindex="-1"
+     aria-labelledby="deletePinoutModalLabel"
+     aria-hidden="true"
+     hx-get="{% url 'systemcore:rj45pinout_delete' pk=pinout.pk %}"
+     hx-target="#deletePinoutModal .modal-content"
+     hx-trigger="show.bs.modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-body text-center py-5">
+        <div class="spinner-border text-danger" role="status"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

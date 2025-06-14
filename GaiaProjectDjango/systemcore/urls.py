@@ -16,7 +16,11 @@ Including another URLconf
 """
 from django.urls import path
 from . import views
-from .views import HomeView, ColorCodeListView, ColorCodeCreateView, ColorCodeDetailView, RJ45PinoutBulkCreateView, RJ45PinoutListView
+from .views import (HomeView, ColorCodeListView,
+                    ColorCodeCreateView, ColorCodeDetailView,
+                    RJ45PinoutBulkCreateView, RJ45PinoutListView,
+                    RJ45PinoutDetailView, RJ45PinoutUpdateView,
+                    RJ45PinoutDeleteView, RJ45PinDeleteView, RJ45PinUpdateView)
 
 app_name = 'systemcore'
 
@@ -30,4 +34,12 @@ urlpatterns = [
     
     path('rj45pinout/bulk-create/', RJ45PinoutBulkCreateView.as_view(), name='rj45pinout_bulk_create'),
     path('rj45pinout/', RJ45PinoutListView.as_view(), name='rj45pinout_list'),
+    path('rj45pinout/<int:pk>/', RJ45PinoutDetailView.as_view(), name='rj45pinout_detail'),
+    path('rj45pinout/<int:pk>/edit/', RJ45PinoutUpdateView.as_view(), name='rj45pinout_edit'),
+    path('rj45pinout/<int:pk>/delete/', RJ45PinoutDeleteView.as_view(), name='rj45pinout_delete'),
+    path('rj45pin/<int:pk>/edit/', RJ45PinUpdateView.as_view(), name='rj45pin_edit'),
+    path('rj45pin/<int:pk>/delete/', RJ45PinDeleteView.as_view(), name='rj45pin_delete'),
+    
 ]
+
+

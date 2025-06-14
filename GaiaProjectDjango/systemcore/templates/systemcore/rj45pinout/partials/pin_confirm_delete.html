@@ -1,0 +1,13 @@
+<form method="post"
+      hx-delete="{% url 'systemcore:rj45pin_delete' pk=object.pk %}"
+      hx-target="#deletePinModal{{ object.pk }} .modal-content"
+      hx-swap="outerHTML">
+  {% csrf_token %}
+  <div class="modal-body">
+    <h5>Are you sure you want to delete Pin {{ object.pin_number }}?</h5>
+  </div>
+  <div class="modal-footer">
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+  </div>
+</form>

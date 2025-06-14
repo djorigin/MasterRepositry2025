@@ -1,10 +1,12 @@
-from django.views.generic.edit import FormView
+from django.views.generic.edit import FormView,UpdateView,DeleteView
 from django.forms import modelformset_factory, modelform_factory
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
 from django.urls import reverse_lazy, reverse
 from .models import  SystemCoreColourCode, RJ45Pinout, RJ45Pin
 from django.db.models import Q
+from django.http import HttpResponse
+from .forms import RJ45PinoutForm, RJ45PinForm
 
 
 class HomeView(TemplateView):
@@ -137,6 +139,71 @@ class RJ45PinoutListView(ListView):
     ordering = ['name']  # Optional: specify ordering of the list
     paginate_by = 20  # Optional: add pagination
 
+class RJ45PinoutDetailView(DetailView):
+    model = RJ45Pinout
+    template_name = 'systemcore/rj45pinout/rj45pinout_detail.html'
+    context_object_name = 'pinout'
+
+from django.views.generic.edit import UpdateView
+from django.http import HttpResponse
+
+class RJ45PinoutUpdateView(UpdateView):
+    model = RJ45Pinout
+    form_class = RJ45PinoutForm
+    template_name = 'systemcore/rj45pinout/partials/pinout_edit_form.html'
+
+    def form_valid(self, form):
+        self.object = form.save()
+        # Return a partial to update the detail page, or a success message
+        return HttpResponse('<div class="alert alert-success">Pinout updated!</div>')
+    
+class RJ45PinoutDeleteView(DeleteView):
+    model = RJ45Pinout
+    template_name = 'systemcore/rj45pinout/partials/pinout_confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        # Return a simple success message and JS to redirect
+        return HttpResponse("""
+            <div class="modal-body">
+                <div class="alert alert-success">Pinout deleted! Redirecting...</div>
+            </div>
+            <script>
+                setTimeout(function() {
+                    window.location.href = '%s';
+                }, 1200);
+            </script>
+        """ % (reverse_lazy('systemcore:rj45pinout_list')))
+
+class RJ45PinUpdateView(UpdateView):
+    model = RJ45Pin
+    form_class = RJ45PinForm
+    template_name = 'systemcore/rj45pinout/partials/pin_edit_form.html'
+
+    def form_valid(self, form):
+        self.object = form.save()
+        return HttpResponse(
+            '<div class="modal-body"><div class="alert alert-success">Pin updated! <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="window.location.reload()">Reload</button></div></div>'
+        )
+
+class RJ45PinDeleteView(DeleteView):
+    model = RJ45Pin
+    template_name = 'systemcore/rj45pinout/partials/pin_confirm_delete.html'
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        return HttpResponse("""
+            <div class="modal-body">
+                <div class="alert alert-success">Pin deleted! Redirecting...</div>
+            </div>
+            <script>
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1200);
+            </script>
+        """)
 def index(request):
     """
     View function for the home page of the site.
@@ -321,4 +388,4 @@ def testimonials(request):
     feedback or reviews from users or customers, showcasing their experiences with the site, 
     products, or services, and helping to build trust and credibility with potential users.
     """
-    return render(request, 'systemcore/testimonials.html', {})       
+    return render(request, 'systemcore/testimonials.html', {})

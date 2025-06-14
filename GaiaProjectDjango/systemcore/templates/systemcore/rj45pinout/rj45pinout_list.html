@@ -2,26 +2,42 @@
 {% load static %}
 
 {% block content %}
-<div class="container">
-  <h2>RJ45 Pinouts</h2>
-</div>
-<div class="container">
-  <ul>
+<div class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>RJ45 Pinouts</h2>
+    <a href="{% url 'systemcore:rj45pinout_bulk_create' %}" class="btn btn-primary">
+      <i class="fa fa-plus"></i> Create New Pinout
+    </a>
+  </div>
+  <div class="row">
     {% for pinout in pinouts %}
-      <li>
-        <strong>{{ pinout.name }}</strong>
-        <ul>
-          {% for pin in pinout.pins.all %}
-            <li>Pin {{ pin.pin_number }}: {{ pin.color_code }}</li>
-          {% endfor %}
-        </ul>
-      </li>
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">
+              <a href="{% url 'systemcore:rj45pinout_detail' pinout.pk %}" class="stretched-link text-decoration-none">
+                {{ pinout.name }}
+              </a>
+            </h5>
+            {% if pinout.image %}
+              <img src="{{ pinout.image.url }}" class="img-fluid mb-2" style="max-width:120px;">
+            {% endif %}
+            <ul class="list-unstyled mb-0">
+              {% for pin in pinout.pins.all %}
+                <li>
+                  <span class="badge bg-secondary">Pin {{ pin.pin_number }}</span>
+                  <span class="ms-2">{{ pin.color_code }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
     {% empty %}
-      <li>No pinouts found.</li>
+      <div class="col-12">
+        <div class="alert alert-info">No pinouts found.</div>
+      </div>
     {% endfor %}
-  </ul>
-</div>
-<div class="container">
-  <a href="{% url 'systemcore:rj45pinout_bulk_create' %}" class="btn btn-primary">Create New Pinout</a>
+  </div>
 </div>
 {% endblock %}
